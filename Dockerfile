@@ -1,40 +1,36 @@
 # ==========================================
-# Этап 1: Клонирование обоих репозиториев
-# ==========================================
-FROM alpine/git:latest AS source
-WORKDIR /src
-RUN git clone --depth 1 https://github.com/octopus-domino/ticket-editor.git
-RUN git clone --depth 1 https://github.com/octopus-domino/ticket-pdf.git
-
-# ==========================================
-# Этап 2: Сборка Frontend (React)
+# Этап 1: Сборка Frontend (React)
 # ==========================================
 FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+
+# Явно задаем переменные, чтобы Vite 100% их подхватил
 ENV VITE_DRAWIO_URL="https://drawio.codoc.site/"
 ENV VITE_FEATURE_DIAGRAM="true"
 ENV VITE_BACKEND_URL="/"
 ENV VITE_BASE_URL="/"
 ENV VITE_EXPORT_API="/api/export"
-WORKDIR /app
-COPY --from=source /src/ticket-editor/package*.json ./
+
+# Копируем локальные файлы (которые вы обновили через git pull)
+COPY ticket-editor/package*.json ./
 RUN npm install
-COPY --from=source /src/ticket-editor/ .
+COPY ticket-editor/ ./
 # Заменяем хардкод localhost на относительные пути для продакшена
 RUN sed -i 's|http://localhost:8080||g' src/auth/LoginPage.tsx || true
 RUN npm run build
 
 # ==========================================
-# Этап 3: Сборка Backend (Spring Boot)
+# Этап 2: Сборка Backend (Spring Boot)
 # ==========================================
 FROM maven:3.9-eclipse-temurin-17 AS backend-builder
 WORKDIR /app
-COPY --from=source /src/ticket-pdf/pom.xml .
+COPY ticket-pdf/pom.xml ./
 RUN mvn dependency:go-offline -B
-COPY --from=source /src/ticket-pdf/src ./src
+COPY ticket-pdf/src ./src
 RUN mvn clean package -DskipTests
 
 # ==========================================
-# Этап 4: Финальный образ (Nginx + Java)
+# Этап 3: Финальный образ (Nginx + Java)
 # ==========================================
 FROM eclipse-temurin:17-jre-alpine
 
@@ -48,9 +44,9 @@ COPY --from=backend-builder /app/target/*.jar /app/app.jar
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
 
 # Копируем конфиг Nginx
-COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY ticket-infra/nginx.conf /etc/nginx/http.d/default.conf
 
-# Настраиваем Supervisor, чтобы он одновременно запускал Nginx и Java
+# Настраиваем Supervisor
 RUN mkdir -p /etc/supervisor.d && echo $'[supervisord]\n\
 nodaemon=true\n\
 \n\
@@ -67,6 +63,9 @@ stdout_logfile=/dev/stdout\n\
 stdout_logfile_maxbytes=0\n\
 stderr_logfile=/dev/stderr\n\
 stderr_logfile_maxbytes=0' > /etc/supervisord.conf
+
+# ВАЖНО: задаем рабочую директорию, чтобы база данных создавалась в /app/data
+WORKDIR /app
 
 # Открываем 80-й порт
 EXPOSE 80
