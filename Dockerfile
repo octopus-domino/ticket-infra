@@ -10,6 +10,11 @@ RUN git clone --depth 1 https://github.com/octopus-domino/ticket-pdf.git
 # Этап 2: Сборка Frontend (React)
 # ==========================================
 FROM node:20-alpine AS frontend-builder
+ENV VITE_DRAWIO_URL="https://drawio.codoc.site/"
+ENV VITE_FEATURE_DIAGRAM="true"
+ENV VITE_BACKEND_URL="/"
+ENV VITE_BASE_URL="/"
+ENV VITE_EXPORT_API="/api/export"
 WORKDIR /app
 COPY --from=source /src/ticket-editor/package*.json ./
 RUN npm install
