@@ -1,7 +1,7 @@
 # ==========================================
 # Этап 1: Сборка Frontend (React)
 # ==========================================
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 
 # Явно задаем переменные, чтобы Vite 100% их подхватил
