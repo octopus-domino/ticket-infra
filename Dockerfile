@@ -13,11 +13,10 @@ ENV VITE_EXPORT_API="/api/export"
 
 # Копируем локальные файлы (которые вы обновили через git pull)
 COPY ticket-editor/package*.json ./
-RUN npm install
+RUN npm ci
 COPY ticket-editor/ ./
 # Заменяем хардкод localhost на относительные пути для продакшена
-RUN sed -i 's|http://localhost:8080||g' src/auth/LoginPage.tsx || true
-RUN npm run build
+RUN npm run check && npm test && npm run build
 
 # ==========================================
 # Этап 2: Сборка Backend (Spring Boot)
@@ -27,7 +26,7 @@ WORKDIR /app
 COPY ticket-pdf/pom.xml ./
 RUN mvn dependency:go-offline -B
 COPY ticket-pdf/src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -B clean verify
 
 # ==========================================
 # Этап 3: Финальный образ (Nginx + Java)
@@ -69,6 +68,7 @@ WORKDIR /app
 
 # Открываем 80-й порт
 EXPOSE 80
+VOLUME ["/app/data"]
 
 # Запускаем Supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
