@@ -14,6 +14,8 @@ RUN --mount=type=cache,id=codoc-npm,target=/root/.npm,sharing=locked \
 # Явно задаем переменные, чтобы Vite 100% их подхватил
 ENV VITE_DRAWIO_URL="https://drawio.codoc.site/"
 ENV VITE_FEATURE_DIAGRAM="true"
+ARG VITE_FEATURE_EMAIL="true"
+ENV VITE_FEATURE_EMAIL=${VITE_FEATURE_EMAIL}
 ENV VITE_BACKEND_URL="/"
 ENV VITE_BASE_URL="/"
 ENV VITE_EXPORT_API="/api/export"
@@ -21,6 +23,10 @@ ARG VITE_YANDEX_METRIKA_ID="114057241"
 ENV VITE_YANDEX_METRIKA_ID=${VITE_YANDEX_METRIKA_ID}
 ARG VITE_FEEDBACK_FORM_URL="https://forms.yandex.ru/u/6aea2bde49af470247e9dcf9/"
 ENV VITE_FEEDBACK_FORM_URL=${VITE_FEEDBACK_FORM_URL}
+ARG VITE_YANDEX_VERIFICATION=""
+ENV VITE_YANDEX_VERIFICATION=${VITE_YANDEX_VERIFICATION}
+ARG VITE_GOOGLE_SITE_VERIFICATION=""
+ENV VITE_GOOGLE_SITE_VERIFICATION=${VITE_GOOGLE_SITE_VERIFICATION}
 
 # Копируем исходники без локальных node_modules (Dockerfile.dockerignore).
 COPY ticket-editor/ ./
