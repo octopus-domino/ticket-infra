@@ -1,0 +1,24 @@
+{
+  "name": "CoDoc client API",
+  "api_id": "codoc-client",
+  "org_id": "codoc",
+  "active": true,
+  "use_keyless": false,
+  "auth": { "auth_header_name": "X-API-Key", "use_param": false, "use_cookie": false },
+  "strip_auth_data": false,
+  "version_data": {
+    "not_versioned": true,
+    "default_version": "Default",
+    "versions": {
+      "Default": { "name": "Default", "use_extended_paths": true,
+        "global_headers_remove": ["Authorization", "Cookie", "X-CoDoc-User-Id", "X-CoDoc-Gateway-Token"]
+      }
+    }
+  },
+  "proxy": { "listen_path": "/client-api/", "target_url": "http://app:8080/api/", "strip_listen_path": true },
+  "global_rate_limit": { "rate": 120, "per": 60 },
+  "disable_rate_limit": false,
+  "disable_quota": false,
+  "enable_detailed_recording": false,
+  "enable_context_vars": false
+}

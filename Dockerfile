@@ -5,6 +5,7 @@
 # ==========================================
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 
 # Установка зависит только от lock-файла, не от настроек Vite и исходников.
 COPY ticket-editor/package*.json ./
@@ -31,13 +32,16 @@ ENV VITE_GOOGLE_SITE_VERIFICATION=${VITE_GOOGLE_SITE_VERIFICATION}
 # Копируем исходники без локальных node_modules (Dockerfile.dockerignore).
 COPY ticket-editor/ ./
 # Заменяем хардкод localhost на относительные пути для продакшена
-RUN npm run check && npm test && npm run build
+RUN npm run check && npm test -- --maxWorkers=2 --minWorkers=1 && npm run build
 
 # ==========================================
 # Этап 2: Сборка Backend (Spring Boot)
 # ==========================================
 FROM maven:3.9-eclipse-temurin-17 AS backend-builder
 WORKDIR /app
+ENV MAVEN_OPTS="-Xmx768m"
+# Serialize build stages on the small target VM instead of running Node and Maven together.
+COPY --from=frontend-builder /app/dist /tmp/frontend-dist
 COPY ticket-pdf/pom.xml ./
 RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked \
     mvn -B -ntp dependency:go-offline
@@ -51,7 +55,7 @@ RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked
 FROM eclipse-temurin:17-jre-alpine
 
 # Устанавливаем Nginx, Supervisor (для запуска двух процессов) и curl
-RUN apk add --no-cache nginx supervisor curl
+RUN apk add --no-cache nginx supervisor curl fontconfig font-dejavu font-liberation font-noto-cjk tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-rus
 
 # Копируем собранный JAR-файл бэкенда
 COPY --from=backend-builder /app/target/*.jar /app/app.jar
