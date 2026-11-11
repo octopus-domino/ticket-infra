@@ -7,7 +7,7 @@
 1. Скопировать `api.env.example` в `.env`. Задать независимые случайные секреты длиной не менее 32 символов. `APP_SECRETS_ENCRYPTION_KEY` хранить вместе с резервной копией БД: без него нельзя расшифровать credentials источников и удалить ключи из Tyk. В Git `.env` не попадает.
 2. Проверить `docker compose --env-file .env -f compose.api.yml config --quiet`.
 3. Существующую БД сначала скопировать вместе с `data/generation`. Оставить `DB_SCHEMA_MODE=validate`: миграции расширяют схему. Только для новой пустой БД первый запуск требует `DB_SCHEMA_MODE=update`; затем вернуть `validate`.
-4. Запустить `docker compose --env-file .env -f compose.api.yml up -d --build` из `ticket-infra`. Это отдельный compose, не дополнение к другому файлу.
+4. Из `ticket-infra` выполнить `bash build.sh`, затем `docker compose --env-file .env -f compose.api.yml up -d --no-build`. Сборка останавливает CoDoc и ограничена 2304 MiB / 2 CPU; см. `RESOURCE-BUDGET.md`. Это отдельный compose, не дополнение к другому файлу.
 5. На внешнем reverse proxy настроить HTTPS: веб-приложение → `127.0.0.1:8090`, `/client-api/` → `127.0.0.1:8088`. Сохранить путь `/client-api/`. Порт управления Tyk 8081 и Redis наружу не публикуются.
 6. Открыть CoDoc, войти обычным пользователем, создать ключ. Скопировать значение сразу: повторно показываются только название, префикс, срок, права и счётчики. Проверить запрос ключом, отзыв и повторный отказ в доступе.
 

@@ -23,7 +23,7 @@ sudo docker version
 sudo docker compose version
 ```
 
-Работать можно через `sudo docker`: добавление пользователя в группу Docker для этого не требуется. Проверьте свободное место под образы, npm/Maven-кэши и документы. Лимит памяти работающих сервисов — около 2,85 ГБ суммарно; это настройка, а не результат нагрузочного теста. Сборка ограничена по heap, frontend и backend собираются последовательно. На маленькой VM сборка и тесты могут занимать заметное время. Готовый образ также можно собрать на другой машине и перенести через `docker save` / `docker load`.
+Работать можно через `sudo docker`: добавление пользователя в группу Docker для этого не требуется. Проверьте свободное место под образы, npm/Maven-кэши и документы. Рабочий профиль занимает до 2,85 ГБ контейнерных лимитов. Сборка выполняется на этом же сервере при остановленном CoDoc: отдельный Buildx worker ограничен 2304 МиБ / 2 CPU и одним шагом одновременно. Тесты включены, кеши сохраняются; отдельная машина сборки не нужна. Подробности — в [RESOURCE-BUDGET.md](RESOURCE-BUDGET.md).
 
 ## 2. Перенести актуальные исходники
 
@@ -76,7 +76,8 @@ Google-вход необязателен для регистрации по по
 **Новая пустая БД**, только первый запуск:
 
 ```bash
-sudo env DB_SCHEMA_MODE=update docker compose --env-file .env -f compose.api.yml up -d --build
+sudo bash build.sh
+sudo env DB_SCHEMA_MODE=update docker compose --env-file .env -f compose.api.yml up -d --no-build
 sudo docker compose --env-file .env -f compose.api.yml logs --tail=100 app
 ```
 
@@ -199,8 +200,8 @@ sudo docker compose --env-file .env -f compose.api.yml up -d
 Обновление после резервной копии и переноса новых исходников:
 
 ```bash
-sudo docker compose --env-file .env -f compose.api.yml build app
-sudo docker compose --env-file .env -f compose.api.yml up -d
+sudo bash build.sh
+sudo docker compose --env-file .env -f compose.api.yml up -d --no-build
 sudo docker compose --env-file .env -f compose.api.yml logs --tail=100 app gateway
 ```
 

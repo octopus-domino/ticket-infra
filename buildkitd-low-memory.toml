@@ -1,0 +1,3 @@
+# A build worker is a separate container; Compose service limits do not constrain it.
+[worker.oci]
+  max-parallelism = 1

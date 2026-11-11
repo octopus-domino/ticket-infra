@@ -5,7 +5,8 @@
 # ==========================================
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app
-ENV NODE_OPTIONS="--max-old-space-size=1024"
+ENV NODE_OPTIONS="--max-old-space-size=768" UV_THREADPOOL_SIZE=2 GOMAXPROCS=2
+ENV VITE_BUILD_SOURCEMAP=false
 
 # Установка зависит только от lock-файла, не от настроек Vite и исходников.
 COPY ticket-editor/package*.json ./
@@ -32,14 +33,16 @@ ENV VITE_GOOGLE_SITE_VERIFICATION=${VITE_GOOGLE_SITE_VERIFICATION}
 # Копируем исходники без локальных node_modules (Dockerfile.dockerignore).
 COPY ticket-editor/ ./
 # Заменяем хардкод localhost на относительные пути для продакшена
-RUN npm run check && npm test -- --maxWorkers=2 --minWorkers=1 && npm run build
+RUN npm run check && npm test -- --maxWorkers=1 --minWorkers=1 && npm run build
 
 # ==========================================
 # Этап 2: Сборка Backend (Spring Boot)
 # ==========================================
 FROM maven:3.9-eclipse-temurin-17 AS backend-builder
 WORKDIR /app
-ENV MAVEN_OPTS="-Xmx768m"
+RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+ENV MAVEN_OPTS="-Xms64m -Xmx384m -XX:MaxMetaspaceSize=192m -XX:ActiveProcessorCount=2"
 # Serialize build stages on the small target VM instead of running Node and Maven together.
 COPY --from=frontend-builder /app/dist /tmp/frontend-dist
 COPY ticket-pdf/pom.xml ./
@@ -47,12 +50,20 @@ RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked
     mvn -B -ntp dependency:go-offline
 COPY ticket-pdf/src ./src
 RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked \
-    mvn -B -ntp clean verify
+    mvn -B -ntp -T1 -DforkCount=1 -DreuseForks=true \
+      '-DargLine=-Xmx768m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2' clean verify
 
 # ==========================================
 # Этап 3: Финальный образ (Nginx + Java)
 # ==========================================
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jdk-alpine AS migration
+WORKDIR /migration
+COPY --from=backend-builder /app/target/*.jar /migration/app.jar
+RUN jar xf app.jar BOOT-INF/lib && rm app.jar
+COPY ticket-pdf/tools/H2ToPostgres.java /migration/H2ToPostgres.java
+ENTRYPOINT ["java", "-Xmx512m", "-cp", "/migration/BOOT-INF/lib/*", "/migration/H2ToPostgres.java"]
+
+FROM eclipse-temurin:17-jre-alpine AS runtime
 
 # Устанавливаем Nginx, Supervisor (для запуска двух процессов) и curl
 RUN apk add --no-cache nginx supervisor curl fontconfig font-dejavu font-liberation font-noto-cjk tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-rus

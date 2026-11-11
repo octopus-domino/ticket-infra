@@ -23,6 +23,9 @@ set -a
 # This is the same trusted shell-format .env used by the previous deployment script.
 source .env
 set +a
+if [[ -f "$ROOT/.postgres.env" || "${SPRING_PROFILES_ACTIVE:-}" == *postgres* || "${DATABASE_URL:-}" == jdbc:postgresql:* ]]; then
+  fail 'PostgreSQL deployment uses compose.api.yml + compose.postgres.yml; see POSTGRES-MIGRATION.md. The H2 deployment script will not change this installation.'
+fi
 : "${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is empty}"
 : "${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is empty}"
 : "${JWT_SECRET:?JWT_SECRET is empty}"
@@ -33,7 +36,9 @@ export APP_FRONTEND_URL="${APP_FRONTEND_URL:-https://www.codoc.site}"
 export APP_SECRETS_ENCRYPTION_KEY="${APP_SECRETS_ENCRYPTION_KEY:-$JWT_SECRET}"
 export APP_CONNECTORS_ALLOWED_ORIGINS="${APP_CONNECTORS_ALLOWED_ORIGINS:-}"
 export APP_RECOGNITION_OLLAMA_ENABLED=false
-export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:--Xms128m -Xmx1536m -XX:ActiveProcessorCount=2}"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Xms128m -Xmx1024m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+export OMP_THREAD_LIMIT=1 MALLOC_ARENA_MAX=2
+export SERVER_TOMCAT_THREADS_MAX=32 SERVER_TOMCAT_THREADS_MIN_SPARE=4
 export SPRING_PROFILES_ACTIVE=prod
 export SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 export DOCKER_BUILDKIT=1
@@ -87,48 +92,62 @@ gateway=(docker compose --project-name codoc-gateway --env-file /dev/null -f "$R
 if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" config --quiet; fi
 stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 image="ticket-fullstack:$stamp"
-build=(docker build --platform linux/amd64 --progress plain -f ticket-infra/Dockerfile -t "$image" .)
-if [[ "$NO_CACHE" == true ]]; then build+=(--no-cache); fi
-printf '\nBuilding %s; the current app stays online during the build.\n' "$image"
-"${build[@]}"
-docker network inspect codoc-client-api >/dev/null 2>&1 || docker network create codoc-client-api >/dev/null
-if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" up -d --wait --wait-timeout 180; fi
-
 mkdir -p -- "$DATA_DIR" "$BACKUP_DIR"
 backup="$BACKUP_DIR/$stamp"
 mkdir -m 700 -- "$backup"
 previous=''
 stopped=false
 replaced=false
-on_error() {
-  local status=$?
-  trap - ERR
-  printf '\nDeployment failed (exit %s). Backup: %s\n' "$status" "$backup" >&2
-  if [[ "$replaced" == true ]]; then
-    docker logs --tail 80 ticket-app >&2 || true
-    docker stop --time 60 ticket-app >/dev/null 2>&1 || true
-    printf 'The failed new app is stopped. Previous container: %s. Do not start it against a migrated DB blindly; see rollback instructions.\n' "${previous:-none}" >&2
-  elif [[ "$stopped" == true ]]; then
-    docker start ticket-app >/dev/null || true
+deployed=false
+source "$ROOT/ticket-infra/scripts/lib/low-memory-build.sh"
+codoc_build_preflight
+codoc_capture_running
+finish() {
+  local status=$?; trap - EXIT
+  if ! codoc_stop_builder; then echo 'Could not stop builder. CoDoc remains stopped; inspect Docker before restarting it.' >&2; exit 1; fi
+  if ((status != 0)) && [[ "$deployed" == false ]]; then
+    printf '\nDeployment failed (exit %s). Backup: %s\n' "$status" "$backup" >&2
+    if [[ "$replaced" == true ]]; then
+      docker logs --tail 80 ticket-app >&2 || true
+      docker stop --time 60 ticket-app >/dev/null 2>&1 || true
+      printf 'The new app stays stopped. Previous container: %s. Restore the H2 backup before a database rollback.\n' "${previous:-none}" >&2
+    else
+      codoc_restore_running
+      echo 'No schema changes were made; the previous containers were restored.' >&2
+    fi
   fi
   exit "$status"
 }
-trap on_error ERR
+trap finish EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+codoc_stop_stack
+utility_image=busybox:1.37
 if docker container inspect ticket-app >/dev/null 2>&1; then
-  docker inspect -f '{{.Image}}' ticket-app > "$backup/previous-image.txt"
-  docker stop --time 60 ticket-app >/dev/null
+  utility_image="$(docker inspect -f '{{.Image}}' ticket-app)"
+  printf '%s\n' "$utility_image" > "$backup/previous-image.txt"
   stopped=true
 fi
-# Back up only after Java has stopped. Never delete an H2 lock file on a live database.
-docker run --rm --network none --entrypoint /bin/sh \
+# Backup uses an existing image and runs before the build, with no Java process.
+docker run --rm --network none --memory 128m --memory-swap 128m --cpus 0.5 --entrypoint /bin/sh \
   --mount "type=bind,src=$DATA_DIR,dst=/source,readonly" \
-  --mount "type=bind,src=$backup,dst=/backup" "$image" \
-  -ec 'tar -czf /backup/data.tgz -C /source .; chmod 600 /backup/data.tgz'
+  --mount "type=bind,src=$backup,dst=/backup" "$utility_image" \
+  -ec 'umask 077; tar -czf /backup/data.tgz -C /source .'
 cp -- .env "$backup/deploy.env"
 chmod 600 "$backup/deploy.env"
 for repo in ticket-editor ticket-pdf ticket-infra; do
   if git -C "$repo" rev-parse HEAD >/dev/null 2>&1; then printf '%s %s\n' "$repo" "$(git -C "$repo" rev-parse HEAD)"; fi
 done > "$backup/revisions.txt"
+printf '\nBuilding %s with CoDoc stopped (2 CPU, builder 2304 MiB).\n' "$image"
+codoc_prepare_builder
+build_options=()
+if [[ "$NO_CACHE" == true ]]; then build_options+=(--no-cache); fi
+codoc_build_image "$image" runtime "${build_options[@]}"
+codoc_stop_builder
+codoc_restore_supporting
+
+docker network inspect codoc-client-api >/dev/null 2>&1 || docker network create codoc-client-api >/dev/null
+if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" up -d --wait --wait-timeout 180; fi
 if [[ "$stopped" == true ]]; then
   previous="ticket-app-previous-$stamp"
   docker rename ticket-app "$previous"
@@ -137,12 +156,12 @@ replaced=true
 
 env_args=()
 while IFS= read -r variable; do
-  case "$variable" in APP_*|SMTP_*|EMAIL_*|GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|JWT_SECRET|JAVA_TOOL_OPTIONS|SPRING_PROFILES_ACTIVE|SPRING_JPA_HIBERNATE_DDL_AUTO) env_args+=(--env "$variable");; esac
+  case "$variable" in APP_*|SMTP_*|EMAIL_*|GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|JWT_SECRET|JAVA_TOOL_OPTIONS|WORKFLOW_ADMIN_USER_IDS|OMP_THREAD_LIMIT|MALLOC_ARENA_MAX|SERVER_*|SPRING_PROFILES_ACTIVE|SPRING_JPA_HIBERNATE_DDL_AUTO) env_args+=(--env "$variable");; esac
 done < <(compgen -e)
 launch() {
   docker run -d --name ticket-app --restart unless-stopped \
     --network codoc-client-api --network-alias app \
-    --cpus 2 --memory 2304m --memory-swap 3072m \
+    --cpus 1.5 --memory 1792m --memory-swap 1792m \
     --log-driver json-file --log-opt max-size=20m --log-opt max-file=3 \
     -p 127.0.0.1:8080:80 \
     --mount "type=bind,src=$DATA_DIR,dst=/app/data" \
@@ -175,7 +194,7 @@ if [[ $'\n'"$languages"$'\n' != *$'\neng\n'* || $'\n'"$languages"$'\n' != *$'\nr
 fi
 docker image tag "$image" ticket-fullstack:latest
 printf '\nLocal app is ready. Image: %s\nBackup: %s\nPrevious container: %s\n' "$image" "$backup" "${previous:-none}"
-trap - ERR
+deployed=true
 
 # TLS is terminated by the external Nginx. Fail visibly without rolling back a healthy local app.
 if ! curl -fsS --max-time 30 "$APP_FRONTEND_URL/api/guest/recognition/capabilities"; then

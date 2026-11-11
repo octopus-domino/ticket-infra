@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-codoc}
+      POSTGRES_USER: ${DATABASE_USER:-codoc}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [api]
+    # Shared host: 2 CPU / 4 GiB, including the application and gateways.
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.75
+    shm_size: 128m
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=512MB
+      - -c
+      - max_connections=20
+      - -c
+      - work_mem=2MB
+      - -c
+      - hash_mem_multiplier=1.0
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - autovacuum_work_mem=16MB
+      - -c
+      - autovacuum_max_workers=1
+      - -c
+      - max_parallel_workers_per_gather=0
+      - -c
+      - max_parallel_maintenance_workers=0
+      - -c
+      - max_parallel_workers=0
+      - -c
+      - jit=off
+      - -c
+      - temp_file_limit=256MB
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  app:
+    networks:
+      api: {}
+      legacy-client-api:
+        aliases: [app]
+    environment:
+      SPRING_PROFILES_ACTIVE: prod,postgres
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}
+      DATABASE_USER: ${DATABASE_USER:-codoc}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+      DB_SCHEMA_MODE: ${DB_SCHEMA_MODE:-validate}
+      SPRING_SQL_INIT_MODE: never
+    depends_on:
+      postgres:
+        condition: service_healthy
+  migration:
+    image: codoc-migration
+    profiles: [tools]
+    mem_limit: 768m
+    cpus: 1.0
+    build:
+      context: ..
+      dockerfile: ticket-infra/Dockerfile
+      target: migration
+    environment:
+      H2_URL: ${H2_MIGRATION_URL:-jdbc:h2:file:/legacy/ticket-db;IFEXISTS=TRUE;ACCESS_MODE_DATA=r;FILE_LOCK=NO}
+      H2_USER: ${H2_USER:-sa}
+      H2_PASSWORD: ${H2_PASSWORD:-}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}
+      DATABASE_USER: ${DATABASE_USER:-codoc}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+    volumes:
+      - ${CODOC_APP_STORAGE:-app-data}:/legacy:ro
+    networks: [api]
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  postgres-data:
+networks:
+  legacy-client-api:
+    external: true
+    name: codoc-client-api
