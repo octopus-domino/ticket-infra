@@ -3,6 +3,7 @@
 import getpass
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -34,8 +35,11 @@ def main():
     # Credentials stay in the HTTPS POST body, never in URLs or process arguments.
     with urllib.request.build_opener(NoRedirect()).open(request, timeout=30) as response:
         document = ET.fromstring(response.read(2_000_000))
-    if document.tag != "doc" or document.find(".//error") is not None or not document.findall("elem"):
-        raise RuntimeError("DNS API access was not confirmed; no credentials saved")
+    error = document.find(".//error")
+    if document.tag != "doc" or error is not None or not document.findall("elem"):
+        kind = error.get("type", "unknown") if error is not None else "unexpected-response"
+        kind = kind if re.fullmatch(r"[a-zA-Z0-9_.:-]{1,64}", kind) else "rejected"
+        raise RuntimeError("DNS API access not confirmed: " + kind + "; no credentials saved")
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
     fd = os.open(CREDENTIALS, flags, 0o600)
     try:
@@ -53,5 +57,6 @@ if __name__ == "__main__":
         main()
     except Exception as error:
         # Never print response bodies or exception URLs containing credentials.
-        print("Configuration failed (" + type(error).__name__ + "). No secrets logged.", file=sys.stderr)
+        reason = str(error) if type(error) is RuntimeError else type(error).__name__
+        print("Configuration failed: " + reason + ". No secrets logged.", file=sys.stderr)
         sys.exit(1)
