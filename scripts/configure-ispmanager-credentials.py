@@ -29,7 +29,7 @@ def main():
         raise RuntimeError("Username and password are required")
     data = urllib.parse.urlencode({
         "authinfo": username + ":" + password,
-        "func": "domain.record", "plid": "codoc.site", "out": "xml",
+        "func": "domain.record", "elid": "codoc.site", "out": "xml",
     }).encode()
     request = urllib.request.Request(PANEL, data=data)
     # Credentials stay in the HTTPS POST body, never in URLs or process arguments.

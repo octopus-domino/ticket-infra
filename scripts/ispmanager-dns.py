@@ -42,7 +42,7 @@ class PanelClient:
 
     def records(self):
         return [{child.tag: child.text or "" for child in element}
-                for element in self.call("domain.record", plid=DOMAIN).findall("elem")]
+                for element in self.call("domain.record", elid=DOMAIN).findall("elem")]
 
 
 def load_credentials():
