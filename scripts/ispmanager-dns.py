@@ -74,7 +74,7 @@ def challenge_value():
 
 
 def matching(records, value):
-    return [r for r in records if r.get("rtype") == "TXT"
+    return [r for r in records if r.get("rtype", "").upper() == "TXT"
             and r.get("name", "").rstrip(".") in (CHALLENGE, "_acme-challenge")
             and r.get("value", "").strip().strip('"') == value]
 
@@ -83,7 +83,7 @@ def add(client, value):
     if matching(client.records(), value):
         return False
     client.call("domain.record.edit", plid=DOMAIN, sok="ok", name="_acme-challenge",
-                rtype="TXT", value=value, ttl="300")
+                rtype="txt", value=value, ttl="300")
     return True
 
 

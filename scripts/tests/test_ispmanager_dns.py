@@ -16,7 +16,7 @@ class DnsHookTest(unittest.TestCase):
     def test_cleanup_preserves_other_values_names_and_types(self):
         client = Mock()
         client.records.return_value = [
-            dict(name=dns.CHALLENGE + ".", rtype="TXT", value='"' + TOKEN + '"', rkey="ours"),
+            dict(name=dns.CHALLENGE + ".", rtype="txt", value='"' + TOKEN + '"', rkey="ours"),
             dict(name=dns.CHALLENGE, rtype="TXT", value="another-challenge", rkey="other"),
             dict(name="mail.codoc.site", rtype="TXT", value=TOKEN, rkey="mail"),
             dict(name=dns.CHALLENGE, rtype="A", value=TOKEN, rkey="address"),
@@ -29,6 +29,13 @@ class DnsHookTest(unittest.TestCase):
         client.records.return_value = [dict(name=dns.CHALLENGE, rtype="TXT", value=TOKEN)]
         self.assertFalse(dns.add(client, TOKEN))
         client.call.assert_not_called()
+
+    def test_create_uses_the_panels_lowercase_type_code(self):
+        client = Mock()
+        client.records.return_value = []
+        self.assertTrue(dns.add(client, TOKEN))
+        client.call.assert_called_once_with("domain.record.edit", plid=dns.DOMAIN,
+            sok="ok", name="_acme-challenge", rtype="txt", value=TOKEN, ttl="300")
 
     def test_propagation_failure_cleans_up_our_record(self):
         client = Mock()
