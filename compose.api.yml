@@ -15,6 +15,14 @@ services:
       APP_SECRETS_ENCRYPTION_KEY: ${APP_SECRETS_ENCRYPTION_KEY:?Set a stable encryption key}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-disabled}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-disabled}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SSL: ${SMTP_SSL:-true}
+      SMTP_TLS: ${SMTP_TLS:-false}
+      SMTP_AUTH: ${SMTP_AUTH:-true}
+      EMAIL_FROM: ${EMAIL_FROM:-${SMTP_USER:-}}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL:?Set APP_FRONTEND_URL}
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx1024m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
       OMP_THREAD_LIMIT: "1"
