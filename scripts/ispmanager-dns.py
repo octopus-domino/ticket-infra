@@ -105,7 +105,9 @@ def visible(server, value):
 
 
 def wait_for_dns(value):
-    deadline = time.monotonic() + 1800
+    # A pre-existing manual record may still be cached for an hour. New records
+    # use 300 seconds, but the initial switch must also outlive that older TTL.
+    deadline = time.monotonic() + 7200
     servers = ("ns1.hosting.reg.ru", "ns2.hosting.reg.ru", "8.8.8.8", "1.1.1.1")
     while time.monotonic() < deadline:
         if all(visible(server, value) for server in servers):
@@ -117,7 +119,7 @@ def wait_for_dns(value):
             if all(visible(server, value) for server in servers):
                 return
         time.sleep(15)
-    raise RuntimeError("DNS propagation did not complete within 30 minutes")
+    raise RuntimeError("DNS propagation did not complete within two hours")
 
 
 def authenticate(client, value):
