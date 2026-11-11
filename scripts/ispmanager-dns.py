@@ -18,6 +18,10 @@ DOMAIN = "codoc.site"
 CHALLENGE = "_acme-challenge." + DOMAIN
 
 
+class PanelApiError(RuntimeError):
+    pass
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -36,8 +40,15 @@ class PanelClient:
         request = urllib.request.Request(PANEL, data=urllib.parse.urlencode(parameters).encode())
         with self.opener.open(request, timeout=30) as response:
             document = ET.fromstring(response.read(2_000_000))
-        if document.tag != "doc" or document.find(".//error") is not None or document.find("auth") is not None:
-            raise RuntimeError("DNS API request rejected")
+        error = document.find(".//error")
+        if error is not None:
+            kind = error.get("type", "unknown")
+            kind = kind if re.fullmatch(r"[a-zA-Z0-9_.:-]{1,64}", kind) else "rejected"
+            field = error.get("object", "unknown")
+            field = field if field in {"name", "plid", "elid", "rtype", "txt", "value", "ttl", "authinfo", "auth"} else "unknown"
+            raise PanelApiError("DNS API rejected " + function + ": " + kind + " (field: " + field + ")")
+        if document.tag != "doc" or document.find("auth") is not None:
+            raise PanelApiError("Unexpected DNS API response")
         return document
 
     def records(self):
@@ -134,5 +145,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as error:
-        print("ISPmanager DNS hook failed (" + type(error).__name__ + "); inspect access and DNS propagation. No secrets logged.", file=sys.stderr)
+        reason = str(error) if isinstance(error, PanelApiError) else type(error).__name__
+        print("ISPmanager DNS hook failed: " + reason + ". No secrets logged.", file=sys.stderr)
         sys.exit(1)
