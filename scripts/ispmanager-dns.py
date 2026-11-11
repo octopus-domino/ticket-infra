@@ -106,10 +106,16 @@ def visible(server, value):
 
 def wait_for_dns(value):
     deadline = time.monotonic() + 1800
-    servers = ("ns1.hosting.reg.ru", "ns2.hosting.reg.ru", "8.8.8.8")
+    servers = ("ns1.hosting.reg.ru", "ns2.hosting.reg.ru", "8.8.8.8", "1.1.1.1")
     while time.monotonic() < deadline:
         if all(visible(server, value) for server in servers):
-            return
+            # Multi-perspective CA checks may still have an older cached RRset.
+            # Let one full record TTL elapse, then confirm visibility again.
+            if time.monotonic() + 300 >= deadline:
+                break
+            time.sleep(300)
+            if all(visible(server, value) for server in servers):
+                return
         time.sleep(15)
     raise RuntimeError("DNS propagation did not complete within 30 minutes")
 
