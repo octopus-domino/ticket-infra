@@ -40,7 +40,7 @@ RUN npm run check && npm test -- --maxWorkers=1 --minWorkers=1 && npm run build
 # ==========================================
 FROM maven:3.9-eclipse-temurin-17 AS backend-builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core \
+RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 ENV MAVEN_OPTS="-Xms64m -Xmx384m -XX:MaxMetaspaceSize=192m -XX:ActiveProcessorCount=2"
 # Serialize build stages on the small target VM instead of running Node and Maven together.
