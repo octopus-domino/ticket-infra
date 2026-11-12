@@ -63,7 +63,19 @@ RUN jar xf app.jar BOOT-INF/lib && rm app.jar
 COPY ticket-pdf/tools/H2ToPostgres.java /migration/H2ToPostgres.java
 ENTRYPOINT ["java", "-Xmx512m", "-cp", "/migration/BOOT-INF/lib/*", "/migration/H2ToPostgres.java"]
 
+FROM eclipse-temurin:17-jre-alpine AS routing-runtime
+RUN apk add --no-cache curl unzip \
+    && curl -fL --retry 3 https://github.com/abrensch/brouter/releases/download/v1.7.10/brouter-1.7.10.zip -o /tmp/brouter.zip \
+    && echo '023fec3ba997758e8cd7ab9e1bae52e962af3f00b57683e3de86b84ffad01532  /tmp/brouter.zip' | sha256sum -c - \
+    && unzip -q /tmp/brouter.zip -d /tmp/router \
+    && mkdir /brouter \
+    && cp /tmp/router/brouter-1.7.10/brouter-1.7.10-all.jar /brouter/brouter.jar \
+    && cp -r /tmp/router/brouter-1.7.10/profiles2 /brouter/profiles2
+
 FROM eclipse-temurin:17-jre-alpine AS runtime
+COPY --from=routing-runtime /brouter /opt/brouter
+COPY ticket-infra/routing/codoc-foot.brf /opt/brouter/profiles2/codoc-foot.brf
+COPY ticket-infra/routing/BROUTER-LICENSE /opt/brouter/LICENSE
 
 # Устанавливаем Nginx, Supervisor (для запуска двух процессов) и curl
 RUN apk add --no-cache nginx supervisor curl fontconfig font-dejavu font-liberation font-noto-cjk tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-rus

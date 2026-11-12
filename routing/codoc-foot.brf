@@ -1,0 +1,35 @@
+# CoDoc pedestrian routing. OSM access restrictions apply; no bicycle-only shortcuts.
+---context:global
+assign validForFoot = true
+assign downhillcost = 0
+assign downhillcutoff = 1.5
+assign uphillcost = 0
+assign uphillcutoff = 1.5
+assign turnInstructionMode = 0
+
+---context:way
+assign defaultaccess =
+  if access=private|no then false
+  else if motorroad=yes then false
+  else if highway=motorway|motorway_link|trunk|trunk_link then false
+  else true
+assign footaccess =
+  if foot= then defaultaccess
+  else if foot=no|private|use_sidepath then false
+  else true
+assign costfactor =
+  if not footaccess then 100000
+  else if highway= then 100000
+  else if highway=proposed|construction|abandoned then 100000
+  else 1
+assign turncost = 0
+assign initialcost = 0
+
+---context:node
+assign footaccess =
+  if foot=no|private then false
+  else if foot=yes|designated|permissive then true
+  else if access=no|private then false
+  else if barrier=wall|fence then false
+  else true
+assign initialcost = if footaccess then 0 else 1000000

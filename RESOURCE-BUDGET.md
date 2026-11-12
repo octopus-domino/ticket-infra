@@ -4,7 +4,7 @@
 
 | Сервис | Предел памяти |
 |---|---:|
-| Java, nginx, supervisor и нативный OCR вместе | 1792 MiB |
+| Java, nginx, supervisor, нативный OCR и временный маршрутизатор вместе | 1792 MiB |
 | PostgreSQL | 512 MiB |
 | Tyk | 384 MiB |
 | Redis | 160 MiB |
