@@ -1,0 +1,35 @@
+[
+  {
+    "id": "sage-paper",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "webp_bytes": 1709112,
+    "previous_rgba_png_bytes": 2620133,
+    "lossless_rgb_png_bytes": 2260885,
+    "database_bytes_after_reference_fix": 0
+  },
+  {
+    "id": "corporate-blue",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "webp_bytes": 748622,
+    "previous_rgba_png_bytes": 1259727,
+    "lossless_rgb_png_bytes": 1029961,
+    "database_bytes_after_reference_fix": 0
+  },
+  {
+    "id": "rose-petals",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "webp_bytes": 1548856,
+    "previous_rgba_png_bytes": 2290831,
+    "lossless_rgb_png_bytes": 1973779,
+    "database_bytes_after_reference_fix": 0
+  }
+]

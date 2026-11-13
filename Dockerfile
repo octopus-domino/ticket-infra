@@ -72,6 +72,18 @@ RUN apk add --no-cache curl unzip \
     && cp /tmp/router/brouter-1.7.10/brouter-1.7.10-all.jar /brouter/brouter.jar \
     && cp -r /tmp/router/brouter-1.7.10/profiles2 /brouter/profiles2
 
+FROM node:24-bookworm-slim AS osm-mcp
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /opt/bridge \
+    && /opt/bridge/bin/pip install --no-cache-dir mcp-proxy==0.15.0
+WORKDIR /opt/osm
+COPY ticket-infra/mcp/package*.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+ENV NODE_OPTIONS="--max-old-space-size=64"
+EXPOSE 8000
+CMD ["/opt/bridge/bin/mcp-proxy", "--host", "0.0.0.0", "--port", "8000", "--allowed-host", "osm-mcp:8000", "--allowed-host", "127.0.0.1:8000", "--initialization-timeout", "20", "--stateless", "--pass-environment", "--env", "OSM_ALLOW_TOOLS", "find_nearby_pois,poi_details", "--env", "OSM_USER_AGENT", "CoDoc/1.0 (https://codoc.site)", "--", "/opt/osm/node_modules/.bin/osm-mcp"]
+
 FROM eclipse-temurin:17-jre-alpine AS runtime
 COPY --from=routing-runtime /brouter /opt/brouter
 COPY ticket-infra/routing/codoc-foot.brf /opt/brouter/profiles2/codoc-foot.brf

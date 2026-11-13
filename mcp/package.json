@@ -1,0 +1,6 @@
+{
+  "name": "codoc-osm-mcp-sidecar",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": { "osm-mcp": "0.3.2" }
+}

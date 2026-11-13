@@ -18,6 +18,9 @@ done
 [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true || "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == false ]] || {
   echo 'CODOC_UPDATE_EXTERNAL_NGINX must be true or false.' >&2; exit 1;
 }
+[[ "${CODOC_WALK_MCP_ENABLED:-false}" == true || "${CODOC_WALK_MCP_ENABLED:-false}" == false ]] || {
+  echo 'CODOC_WALK_MCP_ENABLED must be true or false.' >&2; exit 1;
+}
 if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true && $EUID != 0 ]]; then
   sudo -n true || { echo 'External Nginx update requires noninteractive sudo; no services were stopped.' >&2; exit 1; }
 fi

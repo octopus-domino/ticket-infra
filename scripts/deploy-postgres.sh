@@ -13,6 +13,7 @@ export APP_SECRETS_ENCRYPTION_KEY="${APP_SECRETS_ENCRYPTION_KEY:-${JWT_SECRET:?P
 export CLIENT_API_PUBLIC_URL="${CLIENT_API_PUBLIC_URL:-${APP_CLIENT_API_PUBLIC_URL:-${APP_FRONTEND_URL:?Preserve APP_FRONTEND_URL}/client-api}}"
 docker network inspect codoc-client-api >/dev/null 2>&1 || docker network create codoc-client-api >/dev/null
 COMPOSE=(docker compose --env-file .env -f ticket-infra/compose.api.yml -f ticket-infra/compose.postgres.yml)
+if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then COMPOSE+=(-f ticket-infra/compose.walks.yml); fi
 # Validate interpolation before stopping services; --quiet never prints secrets.
 "${COMPOSE[@]}" config --quiet
 export CODOC_NGINX_APP_PORT="${CODOC_HTTP_PORT:-8090}"
@@ -56,6 +57,7 @@ codoc_stop_stack
 if [[ "${CODOC_BUILD_ON_HOST:-true}" == true ]]; then
   codoc_prepare_builder
   codoc_build_image codoc-app runtime
+  if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then codoc_build_image codoc-osm-mcp osm-mcp; fi
 else
   docker image inspect codoc-app >/dev/null
 fi
@@ -67,6 +69,9 @@ database_changed=true
 for migration in journey-batch-owner journey-print-sources journey-albums workflow-visits poetry-sets; do
   "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "ticket-infra/scripts/$migration.sql"
 done
+if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then
+  "${COMPOSE[@]}" up -d --no-build osm-mcp || echo 'Optional OSM MCP did not start; direct Overpass fallback remains available.' >&2
+fi
 codoc_start_postgres_app
 app_ready=true
 if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true ]]; then
