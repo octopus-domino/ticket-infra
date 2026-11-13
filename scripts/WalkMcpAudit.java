@@ -13,7 +13,7 @@ class WalkMcpAudit {
       var commons=new PipeworxCommonsMcpClient(beans.getBeanProvider(io.modelcontextprotocol.client.McpSyncClient.class),mapper);
       var images=commons.searchByName("Eiffel Tower",2.2945,48.8584,500,1);
       System.out.println("commonsImages="+images.size());
-      for(var image:images)System.out.println("license="+image.license()+" source="+image.pageUrl());
+      for(var image:images)System.out.println("license="+image.license()+" source="+image.pageUrl()+" image="+image.imageUrl());
     }
   }
 }
