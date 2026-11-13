@@ -47,7 +47,7 @@ bash ticket-infra/scripts/migrate-postgres.sh --migrate
 После миграции используйте обёртку:
 
 ```bash
-bash ticket-infra/scripts/deploy-postgres.sh
+./ticket-infra/deploy.sh
 ```
 
 Для ручных команд экспортируйте `.postgres.env` и используйте **оба** файла:
@@ -55,7 +55,7 @@ bash ticket-infra/scripts/deploy-postgres.sh
 ```bash
 set -a; source .env; source .postgres.env; set +a
 docker compose --env-file .env -f ticket-infra/compose.api.yml -f ticket-infra/compose.postgres.yml logs --tail 100 app
-bash ticket-infra/scripts/deploy-postgres.sh
+./ticket-infra/deploy.sh
 ```
 
 ## Откат

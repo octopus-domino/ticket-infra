@@ -77,7 +77,7 @@ RAM и таким же общим лимитом RAM+swap. Существующ�
 # Однократный переезд из H2: резервная копия → сборка → перенос → запуск.
 bash ticket-infra/scripts/migrate-postgres.sh --migrate
 # Последующие обновления PostgreSQL, с резервной копией и остановкой на сборку.
-bash ticket-infra/scripts/deploy-postgres.sh
+./ticket-infra/deploy.sh
 # Обновление прежней H2-установки без переезда.
 bash ticket-infra/deploy.sh
 # Только собрать образ: скрипт остановит и затем вернёт прежние контейнеры.

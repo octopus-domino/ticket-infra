@@ -8,7 +8,7 @@ exec 9>"$ROOT/.codoc-deploy.lock"
 flock -n 9 || { echo 'Another deployment or migration is running.'; exit 1; }
 [[ ${1:-} == --migrate ]] || { echo 'Usage: ticket-infra/scripts/migrate-postgres.sh --migrate'; exit 2; }
 [[ -f .env ]] || { echo 'Missing deployment .env'; exit 1; }
-[[ ! -f .postgres.env ]] || { echo 'This installation already uses PostgreSQL. Use scripts/deploy-postgres.sh.'; exit 1; }
+[[ ! -f .postgres.env ]] || { echo 'This installation already uses PostgreSQL. Use ./ticket-infra/deploy.sh.'; exit 1; }
 set -a; source .env; set +a
 h2_file="${H2_FILE_NAME:-ticket-db.mv.db}"
 [[ "$h2_file" =~ ^[a-zA-Z0-9._-]+\.mv\.db$ ]] || { echo 'H2_FILE_NAME must be a database basename ending in .mv.db.'; exit 1; }
@@ -111,4 +111,4 @@ migration_started=true
 mv -- "$backup/postgres.env.pending" "$ROOT/.postgres.env"
 codoc_start_postgres_app
 printf 'Migration finished. Backups and rollback configuration: %s\n' "$backup"
-printf 'Use scripts/deploy-postgres.sh for future updates; do not restart the old H2 app.\n'
+printf 'Use ./ticket-infra/deploy.sh for future updates; do not restart the old H2 app.\n'
