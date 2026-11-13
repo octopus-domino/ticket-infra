@@ -4,7 +4,7 @@ umask 077
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 command -v flock >/dev/null || { echo 'Install flock (util-linux) before deployment.'; exit 1; }
-exec 9>"$ROOT/.codoc-deploy.lock"
+if [[ "${CODOC_DEPLOY_LOCK_HELD:-false}" != true ]]; then exec 9>"$ROOT/.codoc-deploy.lock"; fi
 flock -n 9 || { echo 'Another deployment or migration is running.'; exit 1; }
 [[ -f .env && -f .postgres.env ]] || { echo 'Run the PostgreSQL migration first; preserve .env and .postgres.env.'; exit 1; }
 set -a; source .env; source .postgres.env; set +a

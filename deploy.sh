@@ -24,7 +24,21 @@ set -a
 source .env
 set +a
 if [[ -f "$ROOT/.postgres.env" || "${SPRING_PROFILES_ACTIVE:-}" == *postgres* || "${DATABASE_URL:-}" == jdbc:postgresql:* ]]; then
-  fail 'PostgreSQL deployment uses compose.api.yml + compose.postgres.yml; see POSTGRES-MIGRATION.md. The H2 deployment script will not change this installation.'
+  # Keep the same entrypoint after migration, without ever starting the legacy H2 path.
+  SKIP_GIT_PULL="${SKIP_GIT_PULL:-false}"
+  [[ "$SKIP_GIT_PULL" == true || "$SKIP_GIT_PULL" == false ]] || fail 'SKIP_GIT_PULL must be true or false'
+  for repo in ticket-editor ticket-pdf ticket-infra; do
+    [[ -d "$repo" ]] || fail "Missing repository: $repo"
+    if [[ "$SKIP_GIT_PULL" != true ]]; then
+      [[ -z "$(git -C "$repo" status --porcelain)" ]] || fail "$repo has local changes; no services were stopped."
+      printf '\nUpdating %s\n' "$repo"
+      git -C "$repo" pull --ff-only
+    fi
+  done
+  # Descriptor 9 stays locked across exec: no gap between updating sources and deployment.
+  export CODOC_DEPLOY_LOCK_HELD=true
+  export CODOC_UPDATE_EXTERNAL_NGINX="${CODOC_UPDATE_EXTERNAL_NGINX:-true}"
+  exec bash "$ROOT/ticket-infra/scripts/deploy-postgres.sh" "$@"
 fi
 : "${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is empty}"
 : "${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is empty}"

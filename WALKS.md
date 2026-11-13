@@ -50,7 +50,7 @@ docker build -f ticket-infra/Dockerfile --target osm-mcp -t codoc-osm-mcp .
 docker compose --env-file .env -f ticket-infra/compose.api.yml -f ticket-infra/compose.postgres.yml -f ticket-infra/compose.walks.yml up -d osm-mcp
 ```
 
-Полное обновление: установить `CODOC_WALK_MCP_ENABLED=true` в серверном `.env`, затем `bash ticket-infra/scripts/deploy-postgres.sh`. Скрипт строит последовательно, с резервной копией PostgreSQL и ограничением памяти. Контейнер моста ограничен 256 MiB и 0,5 CPU. Commons использует внешний HTTP-шлюз; свой контейнер не обязателен. Если есть собственный совместимый сервер, задать его HTTP URL в `COMMONS_MCP_URL`.
+Полное обновление: установить `CODOC_WALK_MCP_ENABLED=true` в серверном `.env`, затем запустить `./ticket-infra/deploy.sh` (или `./deploy.sh` из репозитория infra). Это единая точка входа: скрипт определяет PostgreSQL по `.postgres.env`, обновляет три репозитория через fast-forward и передаёт управление PostgreSQL-процедуре с той же блокировкой. Автоматический откат к H2 исключён. Сборка последовательная, с резервной копией PostgreSQL и ограничением памяти. Внешний Nginx обновляется по умолчанию; `CODOC_UPDATE_EXTERNAL_NGINX=false` позволяет явно отключить этот шаг. Контейнер моста ограничен 256 MiB и 0,5 CPU. Commons использует внешний HTTP-шлюз; свой контейнер не обязателен. Если есть собственный совместимый сервер, задать его HTTP URL в `COMMONS_MCP_URL`.
 
 SDK — `io.modelcontextprotocol.sdk:mcp:2.0.1` с Jackson 2 адаптером, без Spring AI. Для Commons используются реальные инструменты шлюза `commons_wikimedia_search` и `file_info`. Таймауты ограничены, payload и сессии не журналируются.
 
