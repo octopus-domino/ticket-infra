@@ -13,17 +13,24 @@ export APP_SECRETS_ENCRYPTION_KEY="${APP_SECRETS_ENCRYPTION_KEY:-${JWT_SECRET:?P
 export CLIENT_API_PUBLIC_URL="${CLIENT_API_PUBLIC_URL:-${APP_CLIENT_API_PUBLIC_URL:-${APP_FRONTEND_URL:?Preserve APP_FRONTEND_URL}/client-api}}"
 docker network inspect codoc-client-api >/dev/null 2>&1 || docker network create codoc-client-api >/dev/null
 COMPOSE=(docker compose --env-file .env -f ticket-infra/compose.api.yml -f ticket-infra/compose.postgres.yml)
+# Validate interpolation before stopping services; --quiet never prints secrets.
+"${COMPOSE[@]}" config --quiet
+export CODOC_NGINX_APP_PORT="${CODOC_HTTP_PORT:-8090}"
+bash "$ROOT/ticket-infra/scripts/check-deploy-config.sh"
 source "$ROOT/ticket-infra/scripts/lib/low-memory-build.sh"
 codoc_build_preflight
 codoc_capture_running
 backup="$ROOT/backups/postgres-deploy-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 mkdir -p "$backup"
 database_changed=false
+app_ready=false
 finish() {
   local status=$?; trap - EXIT
   if ! codoc_stop_builder; then echo 'Could not stop builder. CoDoc remains stopped; inspect Docker before restarting it.' >&2; exit 1; fi
   if ((status != 0)); then
-    if [[ "$database_changed" == false ]]; then
+    if [[ "$app_ready" == true ]]; then
+      echo 'Application is healthy; external Nginx update failed. App remains running; inspect the Nginx rollback output.' >&2
+    elif [[ "$database_changed" == false ]]; then
       "${COMPOSE[@]}" stop postgres >/dev/null 2>&1 || true
       codoc_restore_running
       echo "Update failed before schema changes. Previous containers restored. Backup: $backup" >&2
@@ -61,5 +68,9 @@ for migration in journey-batch-owner journey-print-sources journey-albums workfl
   "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "ticket-infra/scripts/$migration.sql"
 done
 codoc_start_postgres_app
+app_ready=true
+if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true ]]; then
+  sudo -n env CODOC_NGINX_APP_PORT="$CODOC_NGINX_APP_PORT" bash "$ROOT/ticket-infra/scripts/install-external-nginx.sh"
+fi
 echo "PostgreSQL deployment is healthy. Backup: $backup"
 "${COMPOSE[@]}" ps

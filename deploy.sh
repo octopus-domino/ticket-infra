@@ -88,6 +88,8 @@ for repo in ticket-editor ticket-pdf ticket-infra; do
   fi
 done
 # Use the just-updated infrastructure file; all services share the existing bind-mounted app.
+export CODOC_NGINX_APP_PORT=8080
+bash "$ROOT/ticket-infra/scripts/check-deploy-config.sh"
 gateway=(docker compose --project-name codoc-gateway --env-file /dev/null -f "$ROOT/ticket-infra/compose.gateway.yml")
 if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" config --quiet; fi
 stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
@@ -195,6 +197,9 @@ fi
 docker image tag "$image" ticket-fullstack:latest
 printf '\nLocal app is ready. Image: %s\nBackup: %s\nPrevious container: %s\n' "$image" "$backup" "${previous:-none}"
 deployed=true
+if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true ]]; then
+  sudo -n env CODOC_NGINX_APP_PORT="$CODOC_NGINX_APP_PORT" bash "$ROOT/ticket-infra/scripts/install-external-nginx.sh"
+fi
 
 # TLS is terminated by the external Nginx. Fail visibly without rolling back a healthy local app.
 if ! curl -fsS --max-time 30 "$APP_FRONTEND_URL/api/guest/recognition/capabilities"; then

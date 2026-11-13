@@ -19,5 +19,6 @@ umask 077
   printf 'REDIS_PASSWORD=%s\n' "$(openssl rand -hex 32)"
   printf 'APP_FRONTEND_URL=%s\nCLIENT_API_PUBLIC_URL=%s\n' "$frontend" "$public_api"
   printf 'DB_SCHEMA_MODE=validate\nCONNECTOR_ALLOWED_ORIGINS=\n'
+  printf 'CODOC_HTTP_PORT=8090\nAPP_POETRY_POEMSHIP_URL=https://poemship.com/mcp\nAPP_POETRY_POETREE_URL=https://versologie.cz/poetree/api\n'
 } > .env
 printf '%s\n' '.env created with independent secrets and owner-only permissions. Keep a secure backup.'
