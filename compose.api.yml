@@ -38,6 +38,7 @@ services:
       TWOGIS_API_KEY: ${TWOGIS_API_KEY:-}
       APP_JOURNEYS_WIKIMAPIA_KEY: ${WIKIMAPIA_API_KEY:-}
       APP_JOURNEYS_GEOCODER_URL: ${GEOCODER_URL:-https://photon.komoot.io/api/}
+      APP_JOURNEYS_OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
       APP_POETRY_POEMSHIP_URL: ${APP_POETRY_POEMSHIP_URL:-https://poemship.com/mcp}
       APP_POETRY_POETREE_URL: ${APP_POETRY_POETREE_URL:-https://versologie.cz/poetree/api}
       OSM_MCP_ENABLED: ${OSM_MCP_ENABLED:-false}
