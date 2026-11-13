@@ -37,6 +37,13 @@ services:
       APP_RECOGNITION_OLLAMA_ENABLED: "false"
       TWOGIS_API_KEY: ${TWOGIS_API_KEY:-}
       APP_JOURNEYS_WIKIMAPIA_KEY: ${WIKIMAPIA_API_KEY:-}
+      APP_JOURNEYS_YANDEX_API_KEY: ${YANDEX_MAPS_API_KEY:-}
+      APP_HOITH_GPKG_PATH: /app/imports/hoith.gpkg
+      APP_HOITH_IMPORT_ON_STARTUP: ${HOITH_IMPORT_ON_STARTUP:-false}
+      APP_HOITH_CITIES: ${HOITH_CITIES:-}
+      APP_HOITH_REFRESH_ON_START: ${HOITH_REFRESH_ON_START:-false}
+      APP_HOITH_BEFORE_YEAR: ${HOITH_BEFORE_YEAR:-1945}
+      APP_MYSTIC_REFRESH_ON_START: ${MYSTIC_REFRESH_ON_START:-false}
       APP_JOURNEYS_GEOCODER_URL: ${GEOCODER_URL:-https://photon.komoot.io/api/}
       APP_JOURNEYS_OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
       APP_POETRY_POEMSHIP_URL: ${APP_POETRY_POEMSHIP_URL:-https://poemship.com/mcp}
@@ -58,6 +65,7 @@ services:
       retries: 30
     volumes:
       - ${CODOC_APP_STORAGE:-app-data}:/app/data
+      - ${HOITH_IMPORT_DIR:-../data/imports}:/app/imports:ro
     networks: [api]
   gateway:
     image: tykio/tyk-gateway:v5.16.0

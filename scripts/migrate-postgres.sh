@@ -91,6 +91,8 @@ else
 fi
 codoc_stop_builder
 "${COMPOSE[@]}" up -d --wait postgres
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-building-history.sql
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-mystic-places.sql
 bootstrap="codoc-pg-bootstrap-$stamp-$$"
 "${COMPOSE[@]}" run -d --no-deps --name "$bootstrap" \
   -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \

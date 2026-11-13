@@ -64,6 +64,8 @@ fi
 codoc_stop_builder
 "${COMPOSE[@]}" up -d --wait postgres
 database_changed=true
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-building-history.sql
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-mystic-places.sql
 "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-journeys.sql
 "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-workflows.sql
 for migration in journey-batch-owner journey-print-sources journey-albums workflow-visits poetry-sets; do
