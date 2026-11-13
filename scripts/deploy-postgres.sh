@@ -57,6 +57,9 @@ codoc_stop_builder
 database_changed=true
 "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-journeys.sql
 "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-workflows.sql
+for migration in journey-batch-owner journey-print-sources journey-albums workflow-visits poetry-sets; do
+  "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "ticket-infra/scripts/$migration.sql"
+done
 codoc_start_postgres_app
 echo "PostgreSQL deployment is healthy. Backup: $backup"
 "${COMPOSE[@]}" ps

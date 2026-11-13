@@ -1,0 +1,608 @@
+{
+  "count": 60,
+  "original_bytes": 120569937,
+  "lossless_webp_bytes": 79228204,
+  "optimized_png_bytes": 102301917,
+  "images": [
+    {
+      "id": "alpine-lake",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1999156,
+      "png_bytes": 1725718,
+      "webp_bytes": 1354240,
+      "rgba_sha256": "b7fed368b1c80bb61a3ec6d8f358b5ea1787ff6b686a3351520bea1663007128",
+      "pixels_identical": true
+    },
+    {
+      "id": "apricot-haze",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1838951,
+      "png_bytes": 1633701,
+      "webp_bytes": 1314738,
+      "rgba_sha256": "8f9933188df43c48160fd2c095182cf3cfb3215c68d5867ecd225faf9777fa60",
+      "pixels_identical": true
+    },
+    {
+      "id": "art-deco-ivory",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1886247,
+      "png_bytes": 1572908,
+      "webp_bytes": 1182486,
+      "rgba_sha256": "5f707fa82e2098dff425d107b166652d3c6e61444085dbb150d04fef73102445",
+      "pixels_identical": true
+    },
+    {
+      "id": "autumn-herbarium",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2795668,
+      "png_bytes": 2511255,
+      "webp_bytes": 1866772,
+      "rgba_sha256": "9a6caa88c549a27b8e51b20bbda9d77bbeeed5d20d0717f6b2521b122c6de98a",
+      "pixels_identical": true
+    },
+    {
+      "id": "blue-confetti",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1765495,
+      "png_bytes": 1416970,
+      "webp_bytes": 1130342,
+      "rgba_sha256": "42bcf25ff5b1820e075f92b6a2c01c9cbb3b2004ad49cc28c6dab27b54a28c54",
+      "pixels_identical": true
+    },
+    {
+      "id": "blue-current",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1594314,
+      "png_bytes": 1288209,
+      "webp_bytes": 988686,
+      "rgba_sha256": "a06194a4b34985b5139f5a9ec5134c11274db1a50cf246a6ca48f4b3f7a5959f",
+      "pixels_identical": true
+    },
+    {
+      "id": "chalk-plaster",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2123927,
+      "png_bytes": 1849050,
+      "webp_bytes": 1439266,
+      "rgba_sha256": "b1203a5c8427f0683582ae50d17d89f5b5f69c3690a278888af7f6cf280c631f",
+      "pixels_identical": true
+    },
+    {
+      "id": "champagne-bokeh",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1972799,
+      "png_bytes": 1706117,
+      "webp_bytes": 1362442,
+      "rgba_sha256": "543783fc2d79eb6ee31ad725038d4dd75985bd8cfa06196bcf76fbc3f91b8e62",
+      "pixels_identical": true
+    },
+    {
+      "id": "champagne-light",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1582882,
+      "png_bytes": 1246651,
+      "webp_bytes": 969338,
+      "rgba_sha256": "b767d62ab396471e3c6ddbd5fd49fa4fbc84dd5e7365de6dd3fb1a1e7754dbe4",
+      "pixels_identical": true
+    },
+    {
+      "id": "cherry-blossom",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2185433,
+      "png_bytes": 1942148,
+      "webp_bytes": 1533938,
+      "rgba_sha256": "d75c3f37cd247436dbbac8d0da79b4101fd77dea7b69ce3992ad1dbbf37066d2",
+      "pixels_identical": true
+    },
+    {
+      "id": "citrus-garden",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2409031,
+      "png_bytes": 2193310,
+      "webp_bytes": 1693784,
+      "rgba_sha256": "845737ac95896d3060c765da663adeba1b6afb7dc5766a61bb6cc76c34301e12",
+      "pixels_identical": true
+    },
+    {
+      "id": "city-sketch",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2287943,
+      "png_bytes": 2047449,
+      "webp_bytes": 1591620,
+      "rgba_sha256": "7327adc7756b1e57e19ea66307bbef2b0f91c1e52ce85005d834b0d69cdfbed2",
+      "pixels_identical": true
+    },
+    {
+      "id": "coastal-morning",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1933489,
+      "png_bytes": 1647369,
+      "webp_bytes": 1325264,
+      "rgba_sha256": "c782db222c01f280a2e646f057c4e6b09e8fd25cbcce04e549946d0d88e9ee61",
+      "pixels_identical": true
+    },
+    {
+      "id": "coral-festival",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1688965,
+      "png_bytes": 1374022,
+      "webp_bytes": 1085926,
+      "rgba_sha256": "4426efbaea130bb24a44fb826976b521173fd85a27eda146842b85bd9f69072b",
+      "pixels_identical": true
+    },
+    {
+      "id": "corporate-blue",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1422852,
+      "png_bytes": 1029961,
+      "webp_bytes": 748622,
+      "rgba_sha256": "e6e0b8bec23a8db040ab09bf30f1df82f6de92d9be77def7a9538b6bb1b001b0",
+      "pixels_identical": true
+    },
+    {
+      "id": "cotton-ivory",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2359617,
+      "png_bytes": 2053300,
+      "webp_bytes": 1592338,
+      "rgba_sha256": "0810078f1ed9445e1783fa26f64a878236ac951d84075deec3fe4d1794547ee4",
+      "pixels_identical": true
+    },
+    {
+      "id": "dawn-gradient",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1970516,
+      "png_bytes": 1709749,
+      "webp_bytes": 1370448,
+      "rgba_sha256": "7bb194ad30c61fb929f393557fa08954a06dcfc99e6660554672e35025589374",
+      "pixels_identical": true
+    },
+    {
+      "id": "desert-dunes",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1811197,
+      "png_bytes": 1522411,
+      "webp_bytes": 1257078,
+      "rgba_sha256": "e72de9f71a0c75c9bb8b29eac75e381a5381968ba22b6a0bf00315d35436e66d",
+      "pixels_identical": true
+    },
+    {
+      "id": "dusty-blue-floral",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2228751,
+      "png_bytes": 1939368,
+      "webp_bytes": 1486222,
+      "rgba_sha256": "48ef79b5796f38bcef3b8d3f3b8c8cbf94e3c21c887c7910f51f20f56fd187b8",
+      "pixels_identical": true
+    },
+    {
+      "id": "emerald-lines",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1096475,
+      "png_bytes": 776470,
+      "webp_bytes": 615460,
+      "rgba_sha256": "f5199f5dc7339d5ea987801cffb32e7b2f6cd825cd80223dcad8f2901feb073d",
+      "pixels_identical": true
+    },
+    {
+      "id": "executive-ivory",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2590246,
+      "png_bytes": 2241795,
+      "webp_bytes": 1647514,
+      "rgba_sha256": "c05fe168db08b460939be49d746e23baa5f120409f4f41b5f514813ce7a1e337",
+      "pixels_identical": true
+    },
+    {
+      "id": "fern-study",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 3339413,
+      "png_bytes": 3001878,
+      "webp_bytes": 2149148,
+      "rgba_sha256": "ce7e241bf1442df7b08d1580e046cc9d8ec89c5a2d46efe47a4be8be44f55769",
+      "pixels_identical": true
+    },
+    {
+      "id": "forest-haze",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2097721,
+      "png_bytes": 1822808,
+      "webp_bytes": 1365548,
+      "rgba_sha256": "814d9f58222e10b4f8f4c00ccc0bdc09f786621ed1039efcc5c29ea9f0c438c7",
+      "pixels_identical": true
+    },
+    {
+      "id": "gold-celebration",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1757074,
+      "png_bytes": 1488655,
+      "webp_bytes": 1218938,
+      "rgba_sha256": "0eaad84a25062b75cf13c82f23945cde4e49cd1952adb8684814cd574232c366",
+      "pixels_identical": true
+    },
+    {
+      "id": "graphite-grid",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1257140,
+      "png_bytes": 918585,
+      "webp_bytes": 738584,
+      "rgba_sha256": "625509daae96a7c3676080240a9b664f4ad23ca87de531861f5a0c3391c58db7",
+      "pixels_identical": true
+    },
+    {
+      "id": "handmade-washi",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2313161,
+      "png_bytes": 2132783,
+      "webp_bytes": 1687414,
+      "rgba_sha256": "b7740c3451cade2b7a304f50d66e2e42f4747de3880fbcf310fd7d6e8550d606",
+      "pixels_identical": true
+    },
+    {
+      "id": "island-breeze",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2305721,
+      "png_bytes": 1985502,
+      "webp_bytes": 1524810,
+      "rgba_sha256": "49056cb9be0a383d099cefc00cf372d4063042feb7bc426c7d9ab13f50faa04f",
+      "pixels_identical": true
+    },
+    {
+      "id": "lavender-mist",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2273831,
+      "png_bytes": 1946714,
+      "webp_bytes": 1476582,
+      "rgba_sha256": "bf7a33b95e3914387364651fef84521bde178171a35674125b803355de8cc679",
+      "pixels_identical": true
+    },
+    {
+      "id": "light-blueprint",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1348080,
+      "png_bytes": 1010923,
+      "webp_bytes": 779398,
+      "rgba_sha256": "1a3eb0c51220ecd8d6a29eece83b5bf616a40201a2ea7e47933eaff03e204b89",
+      "pixels_identical": true
+    },
+    {
+      "id": "lilac-glass",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1546275,
+      "png_bytes": 1210268,
+      "webp_bytes": 934352,
+      "rgba_sha256": "4ca6b2f47b086fc2adf60d94f0f12db5fa3386bbac89516a6b630baa76ebce5b",
+      "pixels_identical": true
+    },
+    {
+      "id": "linen-cream",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 3076068,
+      "png_bytes": 2688966,
+      "webp_bytes": 1908746,
+      "rgba_sha256": "ad31a6c622a7e64617654265002c70caba8d9bd7086c2578d64f7c993c4af930",
+      "pixels_identical": true
+    },
+    {
+      "id": "mint-lilac",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1560290,
+      "png_bytes": 1209180,
+      "webp_bytes": 954604,
+      "rgba_sha256": "8d6383f113a1794b5521aa46bc5f79942979714da3aee79c11dd4cfdbeba5f7b",
+      "pixels_identical": true
+    },
+    {
+      "id": "misty-mountains",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1802839,
+      "png_bytes": 1470184,
+      "webp_bytes": 1197646,
+      "rgba_sha256": "66f6572c5167cc296fdbe49c7c44a61932d14e8ba8af9ee1a0a946d7b0acc646",
+      "pixels_identical": true
+    },
+    {
+      "id": "navy-gold",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1641585,
+      "png_bytes": 1280786,
+      "webp_bytes": 958140,
+      "rgba_sha256": "cc0da169b4e21816492072bd7ff1d5f0e8cfcdf02cd7f66a6dff1c561922f626",
+      "pixels_identical": true
+    },
+    {
+      "id": "northern-light",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1785348,
+      "png_bytes": 1489276,
+      "webp_bytes": 1215050,
+      "rgba_sha256": "d60060597f99e7922c56fbc75333801caf706eb0bef62f49c5bb699755517b63",
+      "pixels_identical": true
+    },
+    {
+      "id": "olive-grove",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2144678,
+      "png_bytes": 1900726,
+      "webp_bytes": 1453072,
+      "rgba_sha256": "41fb265e534d4a6f3b4297894bc7ef34c399d4b66de7b3bd1546ada7cc0ecbab",
+      "pixels_identical": true
+    },
+    {
+      "id": "pale-wood",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2059108,
+      "png_bytes": 1757974,
+      "webp_bytes": 1413022,
+      "rgba_sha256": "2e75093b7fa221c3590c1c9aa596960035a82116c0be3dfa3343b5fe51f95452",
+      "pixels_identical": true
+    },
+    {
+      "id": "peach-ribbon",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2076791,
+      "png_bytes": 1807206,
+      "webp_bytes": 1425704,
+      "rgba_sha256": "0601ce81d367a7b978d8b84ff8c60752c2dfb65d0aba926fd2742a15f43fd260",
+      "pixels_identical": true
+    },
+    {
+      "id": "pearl-flow",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1636138,
+      "png_bytes": 1307002,
+      "webp_bytes": 1080570,
+      "rgba_sha256": "eae54caebd60caca5bd6ba0beeae4f3b004b98fce0c84cb75a8dedace4634c02",
+      "pixels_identical": true
+    },
+    {
+      "id": "platinum-paper",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2177549,
+      "png_bytes": 1784377,
+      "webp_bytes": 1393162,
+      "rgba_sha256": "2a1c58d973633162bb90b7138329b41578084a6a000dfae73ab2757c04326933",
+      "pixels_identical": true
+    },
+    {
+      "id": "recycled-paper",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2689406,
+      "png_bytes": 2349523,
+      "webp_bytes": 1795750,
+      "rgba_sha256": "f67fcfa4bfb85b38204980b9bfad28bc14727570848388ba7ebdd335080bdaf7",
+      "pixels_identical": true
+    },
+    {
+      "id": "rose-petals",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2237509,
+      "png_bytes": 1973779,
+      "webp_bytes": 1548856,
+      "rgba_sha256": "6977190be4bcd3914a6cfbc4c8631ea2e5c46d18ab044b189e40589fd70abb31",
+      "pixels_identical": true
+    },
+    {
+      "id": "sage-paper",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2529362,
+      "png_bytes": 2260885,
+      "webp_bytes": 1709112,
+      "rgba_sha256": "af5e92dd6d4846af18bbabe28dc0ab69e4d25d85703674ef1d2f0c1a45a21bd0",
+      "pixels_identical": true
+    },
+    {
+      "id": "sakura-journey",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1882585,
+      "png_bytes": 1594494,
+      "webp_bytes": 1299704,
+      "rgba_sha256": "780c84b1a43034972b0ae45bf503f5cafd2155a5d121475777ed5fc24b738c6a",
+      "pixels_identical": true
+    },
+    {
+      "id": "sand-architecture",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1729497,
+      "png_bytes": 1365691,
+      "webp_bytes": 1091946,
+      "rgba_sha256": "e52db7f6e6f05be0a61bf70f3c475db316cb1505670b6f39094a7fbbc8fa4984",
+      "pixels_identical": true
+    },
+    {
+      "id": "seafoam-orbit",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2028483,
+      "png_bytes": 1680507,
+      "webp_bytes": 1318712,
+      "rgba_sha256": "2d98c26f6c9c2805625e45bade706caaa129774fddbbdc81e4ed3735cf5724b8",
+      "pixels_identical": true
+    },
+    {
+      "id": "silk-pearl",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1930513,
+      "png_bytes": 1593510,
+      "webp_bytes": 1296652,
+      "rgba_sha256": "5ecfb653521f336faf7557e271b8959be8c67781c87ee638b5d5c3c716e69a2a",
+      "pixels_identical": true
+    },
+    {
+      "id": "silver-linework",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1086766,
+      "png_bytes": 722444,
+      "webp_bytes": 474870,
+      "rgba_sha256": "6ea3be7e52e9b8485c555b8ddd2a2936167f10a9c771dd61508b04c77a2f5cb4",
+      "pixels_identical": true
+    },
+    {
+      "id": "spring-watercolor",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2028084,
+      "png_bytes": 1794168,
+      "webp_bytes": 1413284,
+      "rgba_sha256": "c2526fc2fe49c84405a63d5ee8f0e5c35ead6a3439e7b264224a5787cb1029d5",
+      "pixels_identical": true
+    },
+    {
+      "id": "steel-wave",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1515246,
+      "png_bytes": 1172482,
+      "webp_bytes": 878530,
+      "rgba_sha256": "dc3d6da0226d05a1b91bf4cc16eeb1c6a048b2c30d6a45f8dc8c308151bfc9f9",
+      "pixels_identical": true
+    },
+    {
+      "id": "teal-geometry",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1477889,
+      "png_bytes": 1066452,
+      "webp_bytes": 795144,
+      "rgba_sha256": "f88ce9debeb4ec346e91e94fcc095bac1e1dd49a80dab07115df854b06948194",
+      "pixels_identical": true
+    },
+    {
+      "id": "terracotta-arch",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2116405,
+      "png_bytes": 1849929,
+      "webp_bytes": 1437240,
+      "rgba_sha256": "743cfe09331b0899ac053c71d30601ec7592745fe0e36fcd19c3dc28d720ac70",
+      "pixels_identical": true
+    },
+    {
+      "id": "terracotta-wave",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2401418,
+      "png_bytes": 2105195,
+      "webp_bytes": 1606564,
+      "rgba_sha256": "59e01bbc9da85d6c8280680db4b8abdce856215ed24201da4f8f3bb6fbea89f6",
+      "pixels_identical": true
+    },
+    {
+      "id": "travertine-sand",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2550445,
+      "png_bytes": 2276393,
+      "webp_bytes": 1756416,
+      "rgba_sha256": "477e8fd4cb9b8eb6609d201e9b74ddfe436b68df0d0f5aea88651bb537b1d717",
+      "pixels_identical": true
+    },
+    {
+      "id": "tropical-sand",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2573089,
+      "png_bytes": 2344008,
+      "webp_bytes": 1761890,
+      "rgba_sha256": "c59a95d14e796b4818d1cb1e21d7f7adba706c435a84ff4f3f133643d11076cd",
+      "pixels_identical": true
+    },
+    {
+      "id": "tuscan-hills",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2241981,
+      "png_bytes": 1965720,
+      "webp_bytes": 1530062,
+      "rgba_sha256": "130d62fd4f1715ea7a9c1afa4218d0960f1dc57da48f7d0b6552cef2ed5df97e",
+      "pixels_identical": true
+    },
+    {
+      "id": "watercolor-ivory",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2287243,
+      "png_bytes": 1950279,
+      "webp_bytes": 1507332,
+      "rgba_sha256": "d4d43affa0cb8cd03ff57636f8b757867b029ad2a29acb08c21a2bc7eed60b73",
+      "pixels_identical": true
+    },
+    {
+      "id": "white-marble",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1499556,
+      "png_bytes": 1078397,
+      "webp_bytes": 784910,
+      "rgba_sha256": "53aaf4097d453fe30c3bb03eb9b63918e7ee617c4557fa4d6eb273cb868ebd89",
+      "pixels_identical": true
+    },
+    {
+      "id": "wildflower-meadow",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 2227702,
+      "png_bytes": 1995095,
+      "webp_bytes": 1569804,
+      "rgba_sha256": "2ca94919353ed0bcddfe36ceb67a0d49625bcd3f56f180a0888542a19af69c88",
+      "pixels_identical": true
+    },
+    {
+      "id": "winter-snow",
+      "width": 1254,
+      "height": 1254,
+      "original_bytes": 1793994,
+      "png_bytes": 1521242,
+      "webp_bytes": 1220412,
+      "rgba_sha256": "a696b40f5a4a2f4796e9c439b9b4c2f8362a55c059b592986e0d6923682555cb",
+      "pixels_identical": true
+    }
+  ]
+}
