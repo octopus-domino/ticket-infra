@@ -32,7 +32,9 @@ finish() {
     if [[ "$app_ready" == true ]]; then
       echo 'Application is healthy; external Nginx update failed. App remains running; inspect the Nginx rollback output.' >&2
     elif [[ "$database_changed" == false ]]; then
-      "${COMPOSE[@]}" stop postgres >/dev/null 2>&1 || true
+      # A Compose image update may have replaced the captured PostgreSQL container ID.
+      # Restore the existing database service before restarting its clients.
+      "${COMPOSE[@]}" up -d --no-recreate --wait postgres
       codoc_restore_running
       echo "Update failed before schema changes. Previous containers restored. Backup: $backup" >&2
     else
@@ -46,7 +48,7 @@ trap finish EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 codoc_stop_apps
-"${COMPOSE[@]}" up -d --wait postgres
+"${COMPOSE[@]}" up -d --no-recreate --wait postgres
 "${COMPOSE[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > "$backup/database.dump"
 cp -- .env "$backup/deploy.env"
 cp -- .postgres.env "$backup/postgres.env"
