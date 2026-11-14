@@ -1,0 +1,19 @@
+{
+  "coverage": {
+    "total": 3550042,
+    "valid_year": 1660095,
+    "before_1945": 181562,
+    "r_name": 1147560,
+    "r_architect": 12900,
+    "r_style": 18338,
+    "r_mkrf": 9407,
+    "r_wikipedia": 5045,
+    "r_cw_url": 21963,
+    "r_url": 7004,
+    "r_years_str": 1662073
+  },
+  "eligible": {
+    "described_rows": 2085881,
+    "geometry_bytes": 548000830
+  }
+}

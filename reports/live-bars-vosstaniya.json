@@ -1,0 +1,16 @@
+{
+  "address": "Площадь Восстания, Лиговский проспект 43-45 литД, Санкт-Петербург, Россия",
+  "status": 200,
+  "request": "?longitude=30.3590236&latitude=59.9299928&kind=attractions&language=ru&theme=bars&maxStops=7&visitTime=2026-11-14T20%3A00",
+  "count": 7,
+  "labels": [
+    "1/2 of you ↗",
+    "Utopist ↗",
+    "&Cider ↗",
+    "Артвечер ↗",
+    "Бравые Парни ↗",
+    "Хоровод ↗",
+    "Современник ↗"
+  ],
+  "alerts": []
+}
