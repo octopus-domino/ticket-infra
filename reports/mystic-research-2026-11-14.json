@@ -1,0 +1,42 @@
+{
+  "total_csv_rows": 178,
+  "added": [
+    {
+      "name": "Власьевская (Знаменская) башня",
+      "latitude": "57.6253595",
+      "longitude": "39.8849742",
+      "source_url": "https://yar.aif.ru/society/persona/tayny_staryh_ulic_i_domov_yaroslavlya"
+    },
+    {
+      "name": "Владимирская церковь на Божедомке",
+      "latitude": "57.6255236",
+      "longitude": "39.8523068",
+      "source_url": "https://yar.aif.ru/society/persona/tayny_staryh_ulic_i_domov_yaroslavlya"
+    },
+    {
+      "name": "Дом с аркой на Красной площади",
+      "latitude": "57.6327195",
+      "longitude": "39.8861669",
+      "source_url": "https://yar.aif.ru/society/persona/tayny_staryh_ulic_i_domov_yaroslavlya"
+    },
+    {
+      "name": "Церковь Димитрия Солунского",
+      "latitude": "57.6216076",
+      "longitude": "39.8814869",
+      "source_url": "https://yar.aif.ru/society/persona/tayny_staryh_ulic_i_domov_yaroslavlya"
+    },
+    {
+      "name": "Спасо-Преображенский монастырь Ярославля",
+      "latitude": "57.621704",
+      "longitude": "39.889441",
+      "source_url": "https://yar.aif.ru/society/persona/tayny_staryh_ulic_i_domov_yaroslavlya"
+    }
+  ],
+  "coordinate_checks": "Photon/OSM; address cross-checks for churches and the arch house",
+  "address_sources": [
+    "https://visityaroslavia.ru/places/877",
+    "https://pohvala.cerkov.ru/",
+    "https://www.yarwiki.ru/article/2723/dom-zhiloj-na-krasnoj-plocshadi-v-yaroslavle"
+  ],
+  "note": "Folklore is presented as legend, not verified supernatural events."
+}

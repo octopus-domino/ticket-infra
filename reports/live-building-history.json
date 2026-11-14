@@ -1,0 +1,45 @@
+{
+  "mystic": {
+    "count": 7,
+    "source": "mystic",
+    "descriptions": true
+  },
+  "history": {
+    "count": 7,
+    "years": [
+      1787,
+      1770,
+      1760,
+      1760,
+      1911,
+      1939,
+      1909
+    ],
+    "architects": 6
+  },
+  "pointLookup": {
+    "source": "HOITH",
+    "year": 1787,
+    "coordinates": [
+      30.314086630500405,
+      59.93752997885329
+    ]
+  },
+  "historySearchCount": 1,
+  "yandexEnabled": true,
+  "database": {
+    "mystic": 173,
+    "buildings": 181562,
+    "postgis": "3.5.7",
+    "minYear": 1039,
+    "maxYear": 1945
+  },
+  "containers": [
+    "codoc-app-1 Up 5 minutes (healthy)",
+    "codoc-osm-mcp-1 Up 5 minutes (healthy)",
+    "codoc-postgres-1 Up 5 minutes (healthy)",
+    "codoc-gateway-gateway-1 Up 4 minutes",
+    "codoc-gateway-redis-1 Up 4 minutes (healthy)",
+    "drawio Up 8 days"
+  ]
+}
