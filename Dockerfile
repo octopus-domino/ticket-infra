@@ -49,7 +49,6 @@ RUN --mount=type=cache,id=codoc-npm,target=/root/.npm,sharing=locked \
 COPY private_jorney/ ./
 ENV VITE_IMPORT_BASE_URL="https://www.codoc.site/start/tours"
 ENV VITE_CODOC_API_URL="/"
-ENV VITE_PUBLIC_SOURCES_BASE_URL="/private-journey/sources"
 RUN --mount=type=secret,id=mos_data_api_key \
     if [ -f /run/secrets/mos_data_api_key ]; then export VITE_MOS_DATA_API_KEY="$(cat /run/secrets/mos_data_api_key)"; fi; \
     npm test && npm run build -- --base=/private-journey/
