@@ -3,9 +3,13 @@
 !ticket-editor/**
 !ticket-pdf/
 !ticket-pdf/**
+!private_jorney/
+!private_jorney/**
 !ticket-infra/
 !ticket-infra/Dockerfile
 !ticket-infra/nginx.conf
+!ticket-infra/nginx.private-sources.conf
+!ticket-infra/nginx.public-source-headers.conf
 !ticket-infra/Dockerfile.dockerignore
 
 **/.git
@@ -22,3 +26,9 @@
 **/*.log
 ticket-editor/dump_front.txt
 ticket-pdf/dump_back.txt
+private_jorney/android
+private_jorney/.cache
+private_jorney/**/*.apk
+# These are bundled public source indexes, not runtime database directories.
+!private_jorney/src/infrastructure/data/
+!private_jorney/src/infrastructure/data/**

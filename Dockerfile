@@ -38,13 +38,29 @@ RUN npm run check && npm test -- --maxWorkers=1 --minWorkers=1 && npm run build
 # ==========================================
 # Этап 2: Сборка Backend (Spring Boot)
 # ==========================================
+FROM node:22-alpine AS private-journey-builder
+WORKDIR /walks
+ENV NODE_OPTIONS="--max-old-space-size=768" UV_THREADPOOL_SIZE=2 GOMAXPROCS=2
+# Depend on the editor build to keep peak memory bounded on the deployment VM.
+COPY --from=frontend-builder /app/dist/app.html /tmp/editor-built.html
+COPY private_jorney/package*.json ./
+RUN --mount=type=cache,id=codoc-npm,target=/root/.npm,sharing=locked \
+    npm ci --prefer-offline --no-audit --no-fund
+COPY private_jorney/ ./
+ENV VITE_IMPORT_BASE_URL="https://www.codoc.site/start/tours"
+ENV VITE_CODOC_API_URL="/"
+ENV VITE_PUBLIC_SOURCES_BASE_URL="/private-journey/sources"
+RUN --mount=type=secret,id=mos_data_api_key \
+    if [ -f /run/secrets/mos_data_api_key ]; then export VITE_MOS_DATA_API_KEY="$(cat /run/secrets/mos_data_api_key)"; fi; \
+    npm test && npm run build -- --base=/private-journey/
+
 FROM maven:3.9-eclipse-temurin-17 AS backend-builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 ENV MAVEN_OPTS="-Xms64m -Xmx384m -XX:MaxMetaspaceSize=192m -XX:ActiveProcessorCount=2"
 # Serialize build stages on the small target VM instead of running Node and Maven together.
-COPY --from=frontend-builder /app/dist /tmp/frontend-dist
+COPY --from=private-journey-builder /walks/dist/index.html /tmp/private-journey-built.html
 COPY ticket-pdf/pom.xml ./
 RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked \
     mvn -B -ntp dependency:go-offline
@@ -97,9 +113,12 @@ COPY --from=backend-builder /app/target/*.jar /app/app.jar
 
 # Копируем собранную статику фронтенда
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
+COPY --from=private-journey-builder /walks/dist /usr/share/nginx/html/private-journey
 
 # Копируем конфиг Nginx
 COPY ticket-infra/nginx.conf /etc/nginx/http.d/default.conf
+COPY ticket-infra/nginx.private-sources.conf /etc/nginx/private-sources.conf
+COPY ticket-infra/nginx.public-source-headers.conf /etc/nginx/public-source-headers.conf
 
 # Настраиваем Supervisor
 RUN mkdir -p /etc/supervisor.d && echo $'[supervisord]\n\

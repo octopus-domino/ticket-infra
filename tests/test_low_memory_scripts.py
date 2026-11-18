@@ -28,13 +28,18 @@ class ScriptsTest(unittest.TestCase):
         self.assertTrue(root.resolve().is_relative_to((WORKSPACE/'temp').resolve()))
         files=['build.sh','build.ps1','deploy.sh','Dockerfile','buildkitd-low-memory.toml',
                'scripts/lib/low-memory-build.sh','scripts/migrate-postgres.sh',
-               'scripts/deploy-postgres.sh','compose.api.yml','compose.postgres.yml','compose.gateway.yml']
+               'scripts/deploy-postgres.sh','scripts/check-deploy-config.sh','scripts/install-external-nginx.sh','scripts/ensure-private-journey.sh',
+               'scripts/journey-batch-owner.sql','scripts/journey-print-sources.sql','scripts/journey-albums.sql',
+               'scripts/workflow-visits.sql','scripts/poetry-sets.sql',
+               'compose.api.yml','compose.postgres.yml','compose.gateway.yml']
         for name in files:
             dest=root/'ticket-infra'/name;dest.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(WORKSPACE/'ticket-infra'/name,dest)
         (root/'ticket-editor').mkdir()
+        (root/'private_jorney').mkdir()
+        (root/'private_jorney/package-lock.json').write_text('{}')
         sql=root/'ticket-pdf/src/main/resources/db';sql.mkdir(parents=True)
-        for name in ['upgrade-journeys.sql','upgrade-workflows.sql']:
+        for name in ['upgrade-journeys.sql','upgrade-workflows.sql','upgrade-building-history.sql','upgrade-mystic-places.sql']:
             shutil.copyfile(WORKSPACE/'ticket-pdf/src/main/resources/db'/name,sql/name)
         (root/'data').mkdir();(root/'data/ticket-db.mv.db').write_bytes(b'isolated fixture, not a database')
         values=dict(JWT_SECRET='test-only-secret-012345678901234567890123456789',

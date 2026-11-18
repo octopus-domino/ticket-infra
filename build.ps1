@@ -6,6 +6,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Get-Command docker -ErrorAction Stop | Out-Null
 $workspaceRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+if (-not (Test-Path -LiteralPath (Join-Path $workspaceRoot 'private_jorney/package-lock.json'))) {
+    throw 'Missing private_jorney beside ticket-editor. Copy the private walks source before building.'
+}
 $builderName = 'codoc-lowmem-v1'
 $managedIds = @()
 $deployLock = $null
@@ -66,6 +69,7 @@ try {
     Invoke-Docker buildx inspect $builderName --bootstrap | Out-Null
     $limits = Invoke-Docker inspect --format '{{.HostConfig.Memory}}:{{.HostConfig.MemorySwap}}:{{.HostConfig.CpuPeriod}}:{{.HostConfig.CpuQuota}}' "buildx_buildkit_${builderName}0"
     if ($limits -ne '2415919104:2415919104:100000:200000') { throw 'Unexpected builder limits. Recreate codoc-lowmem-v1 with --keep-state and retry.' }
+    if ($env:MOS_DATA_API_KEY) { $BuildArguments += @('--secret', 'id=mos_data_api_key,env=MOS_DATA_API_KEY') }
     $dockerArguments = @('buildx', 'build', '--builder', $builderName, '--load', '--progress=plain',
         '--platform', 'linux/amd64', '--file', (Join-Path $PSScriptRoot 'Dockerfile'), '--target', 'runtime', '--tag', $Tag) + $BuildArguments + @($workspaceRoot)
     Invoke-Docker @dockerArguments

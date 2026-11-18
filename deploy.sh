@@ -23,11 +23,12 @@ set -a
 # This is the same trusted shell-format .env used by the previous deployment script.
 source .env
 set +a
+bash "$ROOT/ticket-infra/scripts/ensure-private-journey.sh"
 if [[ -f "$ROOT/.postgres.env" || "${SPRING_PROFILES_ACTIVE:-}" == *postgres* || "${DATABASE_URL:-}" == jdbc:postgresql:* ]]; then
   # Keep the same entrypoint after migration, without ever starting the legacy H2 path.
   SKIP_GIT_PULL="${SKIP_GIT_PULL:-false}"
   [[ "$SKIP_GIT_PULL" == true || "$SKIP_GIT_PULL" == false ]] || fail 'SKIP_GIT_PULL must be true or false'
-  for repo in ticket-editor ticket-pdf ticket-infra; do
+  for repo in ticket-editor ticket-pdf ticket-infra private_jorney; do
     [[ -d "$repo" ]] || fail "Missing repository: $repo"
     if [[ "$SKIP_GIT_PULL" != true ]]; then
       [[ -z "$(git -C "$repo" status --porcelain)" ]] || fail "$repo has local changes; no services were stopped."
@@ -37,7 +38,7 @@ if [[ -f "$ROOT/.postgres.env" || "${SPRING_PROFILES_ACTIVE:-}" == *postgres* ||
   done
   # Descriptor 9 stays locked across exec: no gap between updating sources and deployment.
   export CODOC_DEPLOY_LOCK_HELD=true
-  export CODOC_UPDATE_EXTERNAL_NGINX="${CODOC_UPDATE_EXTERNAL_NGINX:-true}"
+  export CODOC_UPDATE_EXTERNAL_NGINX="${CODOC_UPDATE_EXTERNAL_NGINX:-false}"
   exec bash "$ROOT/ticket-infra/scripts/deploy-postgres.sh" "$@"
 fi
 : "${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is empty}"
@@ -93,7 +94,7 @@ else
   export APP_CLIENT_API_TYK_URL='' APP_CLIENT_API_TYK_SECRET='' APP_CLIENT_API_PUBLIC_URL=''
 fi
 
-for repo in ticket-editor ticket-pdf ticket-infra; do
+for repo in ticket-editor ticket-pdf ticket-infra private_jorney; do
   [[ -d "$repo" ]] || fail "Missing repository: $repo"
   if [[ "$SKIP_GIT_PULL" != true ]]; then
     [[ -z "$(git -C "$repo" status --porcelain)" ]] || fail "$repo has local changes. Commit/copy them deliberately or use SKIP_GIT_PULL=true for an uploaded source snapshot."

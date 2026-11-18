@@ -19,6 +19,7 @@ if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then COMPOSE+=(-f ticket-in
 export CODOC_NGINX_APP_PORT="${CODOC_HTTP_PORT:-8090}"
 bash "$ROOT/ticket-infra/scripts/check-deploy-config.sh"
 source "$ROOT/ticket-infra/scripts/lib/low-memory-build.sh"
+bash "$ROOT/ticket-infra/scripts/ensure-private-journey.sh"
 codoc_build_preflight
 codoc_capture_running
 backup="$ROOT/backups/postgres-deploy-$(date -u +%Y%m%dT%H%M%SZ)-$$"

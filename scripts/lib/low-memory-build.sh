@@ -2,6 +2,7 @@
 # Shared by build and deployment entrypoints. The caller owns its ERR/EXIT traps.
 
 codoc_build_preflight() {
+  [[ -f "$ROOT/private_jorney/package-lock.json" ]] || { echo 'Missing private_jorney beside ticket-editor. Copy the private walks source before building.' >&2; return 1; }
   [[ "${CODOC_BUILD_ON_HOST:-true}" == true || "${CODOC_BUILD_ON_HOST:-true}" == false ]] || { echo 'CODOC_BUILD_ON_HOST must be true or false.' >&2; return 1; }
   docker info >/dev/null
   local total
@@ -123,9 +124,11 @@ codoc_prepare_builder() {
 
 codoc_build_image() {
   local image="$1" target="$2"; shift 2
+  local source_secrets=()
+  if [[ -n "${MOS_DATA_API_KEY:-}" ]]; then source_secrets+=(--secret id=mos_data_api_key,env=MOS_DATA_API_KEY); fi
   docker buildx build --builder "$CODOC_BUILDER" --load --progress=plain \
     --platform linux/amd64 --file "$ROOT/ticket-infra/Dockerfile" \
-    --target "$target" --tag "$image" "$@" "$ROOT"
+    --target "$target" --tag "$image" "${source_secrets[@]}" "$@" "$ROOT"
 }
 
 codoc_stop_builder() {
