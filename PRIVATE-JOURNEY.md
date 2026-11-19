@@ -57,3 +57,7 @@ its home page and from the map's ready-made walks button, including inside CoDoc
 
 After deploying, check `/private-journey/`, direct asset URLs, a preset, a house
 card, and a round trip from `/start/tours` back to the travel constructor.
+# Раздельная публикация
+
+Команды публикации только фронта или только классов бэка, сборки APK, чтения логов и проверок описаны в [RUNTIME-PUBLISH.md](RUNTIME-PUBLISH.md).
+
