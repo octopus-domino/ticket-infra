@@ -108,16 +108,24 @@ def publish_backend(config, stage, archive, release):
     process = backend_pid(container)
     image, backup_image = build_image(stage, container, 'COPY app.jar /app/app.jar\n', release)
     backup_jar = '/app/app.jar.before-runtime-' + release
-    run('docker', 'cp', str(stage / 'app.jar'), container + ':/app/app.jar.next')
-    run('docker', 'exec', container, 'mv', '/app/app.jar', backup_jar)
-    run('docker', 'exec', container, 'mv', '/app/app.jar.next', '/app/app.jar')
-    run('docker', 'exec', container, 'kill', '-TERM', process)
-    if not ready(config):
-        run('docker', 'exec', container, 'mv', backup_jar, '/app/app.jar')
+    moved, restarted = False, False
+    try:
+        run('docker', 'cp', str(stage / 'app.jar'), container + ':/app/app.jar.next')
+        run('docker', 'exec', container, 'mv', '/app/app.jar', backup_jar)
+        moved = True
+        run('docker', 'exec', container, 'mv', '/app/app.jar.next', '/app/app.jar')
+        run('docker', 'exec', container, 'kill', '-TERM', process)
+        restarted = True
+        if not ready(config):
+            raise RuntimeError('Public backend API did not become ready')
+    except Exception:
         run('docker', 'tag', backup_image, image)
-        run('docker', 'exec', container, 'kill', '-TERM', backend_pid(container))
-        restored = ready(config)
-        raise RuntimeError('Backend publication failed; rollback ready=' + str(restored))
+        if moved:
+            run('docker', 'exec', container, 'mv', backup_jar, '/app/app.jar')
+        if restarted:
+            run('docker', 'exec', container, 'kill', '-TERM', backend_pid(container))
+            print('Rollback backend ready=' + str(ready(config)), flush=True)
+        raise
     run('docker', 'exec', container, 'rm', '-f', backup_jar)
     print('Backend API HTTP 200; JAR persisted. Frontend and Nginx unchanged.', flush=True)
 

@@ -24,13 +24,15 @@ try {
   await page.waitForTimeout(2000);
   console.log(JSON.stringify({ component: 'editor', requests: [...requests], failures: [...failures] }));
   requests.length = 0; failures.length = 0;
-  await page.goto(base + '/private-journey/', { waitUntil: 'domcontentloaded' });
   if (values.map) {
     // Synthetic test record is written only into this disposable browser context.
-    await page.evaluate(() => localStorage.setItem('private-walks/browser-recording/v1', JSON.stringify({
+    await page.addInitScript(() => localStorage.setItem('private-walks/browser-recording/v1', JSON.stringify({
       id: 'release-map-check', startedAt: Date.now() - 60000, endedAt: Date.now(), state: 'stopped', pointCount: 1, distanceMeters: 0,
       points: [{ lat: 59.94, lng: 30.27, accuracy: 8, timestamp: Date.now() - 60000 }],
     })));
+  }
+  await page.goto(base + '/private-journey/', { waitUntil: 'domcontentloaded' });
+  if (values.map) {
     const open = async () => {
       await page.getByRole('button', { name: 'Записать прогулку', exact: true }).click();
       await page.locator('.recording-list__open').click();

@@ -25,6 +25,7 @@ python scripts/runtime_publish.py --target codoc-ssh web --component editor --di
 ```powershell
 python scripts/runtime_publish.py --target codoc-ssh backend --classes ../ticket-pdf/target/classes `
   --class-prefix ru/ticket/journey/PlaceRecommendationsController `
+  --class-prefix ru/ticket/journey/OsmPlaceService `
   --class-prefix ru/ticket/journey/walk/WalkAreaSearchService `
   --class-prefix ru/ticket/journey/walk/AreaSearchCoordinator `
   --class-prefix ru/ticket/journey/walk/AreaResultCache
@@ -74,7 +75,11 @@ python scripts/check_recognition_api.py --base-url https://example.org --file ..
 ```powershell
 python scripts/cleanup_runtime_releases.py --target codoc-ssh --older-hours 24
 python scripts/cleanup_runtime_releases.py --target codoc-ssh --older-hours 24 --execute
+python scripts/runtime_disk.py --target codoc-ssh
+python scripts/runtime_disk.py --target codoc-ssh --prune-build-cache --reserve-mib 512
 python -m unittest discover -s scripts/tests -p test_runtime_publish.py
 ```
 
 Очистка по умолчанию показывает кандидатов. Удаляются только старые каталоги `/tmp/codoc-runtime-release-*` с собственным маркером, без перехода по симлинкам. Данные приложения, Docker volumes и образы эта команда не удаляет. Одновременную публикацию нескольких компонентов не запускайте: образ приложения общий.
+
+`runtime_disk.py` показывает свободное место и расход Docker. С явным `--prune-build-cache` удаляет только неиспользуемый кеш сборки, сохраняя указанный резерв. Последующие сборки могут занять больше времени; контейнеры, образы, volumes и пользовательские документы не удаляются.

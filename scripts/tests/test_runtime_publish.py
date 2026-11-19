@@ -83,6 +83,19 @@ class RuntimePublishTest(unittest.TestCase):
                 self.assertEqual(jar.read('BOOT-INF/lib/dependency.jar'), b'nested-library')
                 self.assertEqual(jar.getinfo('BOOT-INF/lib/dependency.jar').compress_type, zipfile.ZIP_STORED)
 
+    def test_failed_health_restores_jar_and_image_without_touching_nginx(self):
+        config = dict(container='test')
+        with tempfile.TemporaryDirectory() as directory, patch.object(remote, 'patch_jar'), \
+                patch.object(remote, 'backend_pid', return_value='42'), \
+                patch.object(remote, 'build_image', return_value=('codoc-app:latest', 'codoc-app:backup')), \
+                patch.object(remote, 'ready', side_effect=[False, True]), patch.object(remote, 'run') as run:
+            with self.assertRaises(RuntimeError):
+                remote.publish_backend(config, Path(directory), None, 'test-release')
+            calls = [call.args for call in run.call_args_list]
+            self.assertIn(('docker', 'tag', 'codoc-app:backup', 'codoc-app:latest'), calls)
+            self.assertIn(('docker', 'exec', 'test', 'mv', '/app/app.jar.before-runtime-test-release', '/app/app.jar'), calls)
+            self.assertFalse(any('nginx' in str(call) or 'compose' in str(call) for call in calls))
+
 
 if __name__ == '__main__':
     unittest.main()
