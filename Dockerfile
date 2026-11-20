@@ -19,6 +19,8 @@ ENV VITE_FEATURE_DIAGRAM="true"
 ARG VITE_FEATURE_EMAIL="true"
 ENV VITE_FEATURE_EMAIL=${VITE_FEATURE_EMAIL}
 ENV VITE_BACKEND_URL="/"
+ARG VITE_ENABLE_TRIP_PLANNER="false"
+ENV VITE_ENABLE_TRIP_PLANNER=${VITE_ENABLE_TRIP_PLANNER}
 ENV VITE_BASE_URL="/"
 ENV VITE_EXPORT_API="/api/export"
 ARG VITE_YANDEX_METRIKA_ID="114057241"
@@ -98,6 +100,13 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 ENV NODE_OPTIONS="--max-old-space-size=64"
 EXPOSE 8000
 CMD ["/opt/bridge/bin/mcp-proxy", "--host", "0.0.0.0", "--port", "8000", "--allowed-host", "osm-mcp:8000", "--allowed-host", "127.0.0.1:8000", "--initialization-timeout", "20", "--stateless", "--pass-environment", "--env", "OSM_ALLOW_TOOLS", "find_nearby_pois,poi_details", "--env", "OSM_USER_AGENT", "CoDoc/1.0 (https://codoc.site)", "--", "/opt/osm/node_modules/.bin/osm-mcp"]
+
+FROM python:3.12-alpine AS ostrovok-mcp
+WORKDIR /srv/mcp
+COPY ticket-infra/mcp/ostrovok/server.py .
+ENV MCP_BIND=0.0.0.0 MCP_PORT=8192
+USER 65534:65534
+CMD ["python", "-u", "server.py"]
 
 FROM eclipse-temurin:17-jre-alpine AS runtime
 COPY --from=routing-runtime /brouter /opt/brouter

@@ -125,10 +125,14 @@ codoc_prepare_builder() {
 codoc_build_image() {
   local image="$1" target="$2"; shift 2
   local source_secrets=()
+  local build_args=()
+  if [[ "$target" == runtime ]]; then
+    build_args+=(--build-arg "VITE_ENABLE_TRIP_PLANNER=${ENABLE_TRIP_PLANNER:-false}")
+  fi
   if [[ -n "${MOS_DATA_API_KEY:-}" ]]; then source_secrets+=(--secret id=mos_data_api_key,env=MOS_DATA_API_KEY); fi
   docker buildx build --builder "$CODOC_BUILDER" --load --progress=plain \
     --platform linux/amd64 --file "$ROOT/ticket-infra/Dockerfile" \
-    --target "$target" --tag "$image" "${source_secrets[@]}" "$@" "$ROOT"
+    --target "$target" --tag "$image" "${source_secrets[@]}" "${build_args[@]}" "$@" "$ROOT"
 }
 
 codoc_stop_builder() {

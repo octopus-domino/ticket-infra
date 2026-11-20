@@ -178,6 +178,17 @@ class ScriptsTest(unittest.TestCase):
         self.assertTrue(state['containers']['pgapp']['running'])
         self.assertFalse(state['builder_running'])
 
+    def test_ostrovok_sidecar_uses_the_shared_builder_and_starts_after_it(self):
+        root,env=self.fixture(FAKE_REQUIRE_BACKUP=1,CODOC_OSTROVOK_MCP_ENABLED='true',ENABLE_TRIP_PLANNER='true')
+        result,state=self.run_script(root,env,'ticket-infra/scripts/deploy-postgres.sh');self.success(result)
+        self.assertEqual(state['targets'],['runtime','ostrovok-mcp'])
+        calls=state['calls']
+        runtime=next(index for index,call in enumerate(calls) if 'VITE_ENABLE_TRIP_PLANNER=true' in call)
+        start=next(index for index,call in enumerate(calls)
+                   if 'up' in call and call[-1]=='ostrovok-mcp')
+        self.assertTrue(any(call[:2] == ['buildx', 'stop'] for call in calls[runtime:start]))
+        self.assertFalse(state['builder_running'])
+
     def test_postgres_sql_failure_keeps_app_stopped_for_review(self):
         root,env=self.fixture(FAKE_FAIL_SQL=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/deploy-postgres.sh')

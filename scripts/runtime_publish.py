@@ -77,7 +77,7 @@ def main():
     backend = actions.add_parser('backend', help='Patch selected compiled classes and restart only Java')
     backend.add_argument('--classes', type=Path, required=True)
     backend.add_argument('--class-prefix', action='append', required=True,
-                         help='For example ru/ticket/journey/walk/AreaSearchCoordinator')
+                         help='For example ru/ticket/journey/application/map/AreaSearchCoordinator')
     backend.add_argument('--health-path', default='/api/journeys/routes/places/themes')
     backend.add_argument('--backend-port', type=int, default=8080)
     args = parser.parse_args()

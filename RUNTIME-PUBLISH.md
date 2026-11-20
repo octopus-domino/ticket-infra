@@ -26,12 +26,12 @@ python scripts/runtime_publish.py --target codoc-ssh web --component editor --di
 python scripts/runtime_publish.py --target codoc-ssh backend --classes ../ticket-pdf/target/classes `
   --class-prefix ru/ticket/journey/PlaceRecommendationsController `
   --class-prefix ru/ticket/journey/OsmPlaceService `
-  --class-prefix ru/ticket/journey/walk/WalkAreaSearchService `
-  --class-prefix ru/ticket/journey/walk/AreaSearchCoordinator `
-  --class-prefix ru/ticket/journey/walk/AreaResultCache
+  --class-prefix ru/ticket/journey/infrastructure/poi/WalkAreaSearchService `
+  --class-prefix ru/ticket/journey/application/map/AreaSearchCoordinator `
+  --class-prefix ru/ticket/journey/infrastructure/poi/AreaResultCache
 ```
 
-Для распознавания вместо этих префиксов можно указать `--class-prefix ru/ticket/recognition/`. Изменения зависимостей, конфигурационных ресурсов или миграций требуют штатной полной сборки: этот инструмент предназначен для ограниченного обновления классов.
+Для распознавания вместо этих префиксов можно указать `--class-prefix ru/ticket/recognition/`. Изменения зависимостей, конфигурационных ресурсов, миграций или пакетов Java требуют штатной полной сборки. Пример поиска области применим после установки образа с новой структурой пакетов.
 
 JAR проверяется как ZIP с сохранением метаданных вложенных библиотек Spring Boot. Перед заменой сохраняется Docker-образ с тегом `before-runtime-*`. Перезапускается только Java-процесс `/app/app.jar` под существующим Supervisor. Статика и Nginx остаются на месте.
 

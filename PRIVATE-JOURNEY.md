@@ -36,13 +36,11 @@ frontend will be included in the compiled client JavaScript.
 
 ## House sources
 
-The published browser frontend uses same-origin URLs under
-`/private-journey/sources/`. Internal Nginx maps each alias to a fixed HTTPS host
-and restricts paths and HTTP methods. It does not accept arbitrary target URLs.
-Cookies, authorization and Set-Cookie headers are stripped. Source query strings
-are not written to the access log. Android retains its existing native transport.
-Browser caching of house history and CIAN areas remains in the client; Nginx does
-not cache apartment listings.
+The published browser frontend requests third-party house sources directly,
+subject to each source's CORS and access rules. Android uses the native
+`PublicSources` transport. Local Vite development can use its own
+`/history-source` helper. Caches for house history and CIAN areas live on
+the client.
 
 ## Travel construction
 

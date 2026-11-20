@@ -21,6 +21,10 @@ done
 [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true || "${CODOC_WALK_MCP_ENABLED:-false}" == false ]] || {
   echo 'CODOC_WALK_MCP_ENABLED must be true or false.' >&2; exit 1;
 }
+for name in CODOC_OSTROVOK_MCP_ENABLED ENABLE_TRIP_PLANNER; do
+  value="${!name:-false}"
+  [[ "$value" == true || "$value" == false ]] || { echo "$name must be true or false." >&2; exit 1; }
+done
 if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true && $EUID != 0 ]]; then
   sudo -n true || { echo 'External Nginx update requires noninteractive sudo; no services were stopped.' >&2; exit 1; }
 fi

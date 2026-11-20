@@ -4,13 +4,15 @@ set -Eeuo pipefail
 INFRA="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 test_root="$(mktemp -d "${TMPDIR:-/tmp}/codoc-entrypoint.XXXXXX")"
 trap 'rm -rf -- "$test_root"' EXIT
-mkdir -p "$test_root/bin" "$test_root/ticket-infra/scripts" "$test_root/ticket-editor" "$test_root/ticket-pdf"
+mkdir -p "$test_root/bin" "$test_root/ticket-infra/scripts" "$test_root/ticket-editor" "$test_root/ticket-pdf" "$test_root/private_jorney"
 cp "$INFRA/deploy.sh" "$test_root/ticket-infra/deploy.sh"
+cp "$INFRA/scripts/ensure-private-journey.sh" "$test_root/ticket-infra/scripts/"
+printf '{}\n' > "$test_root/private_jorney/package-lock.json"
 for command in docker curl git; do
   printf '#!/usr/bin/env bash\nexit 0\n' > "$test_root/bin/$command"
   chmod +x "$test_root/bin/$command"
 done
-printf 'SKIP_GIT_PULL=true\n' > "$test_root/.env"
+printf 'SKIP_GIT_PULL=true\nCODOC_UPDATE_EXTERNAL_NGINX=true\n' > "$test_root/.env"
 touch "$test_root/.postgres.env"
 cat > "$test_root/ticket-infra/scripts/deploy-postgres.sh" <<'SH'
 #!/usr/bin/env bash

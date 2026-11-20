@@ -11,6 +11,11 @@
 !ticket-infra/nginx.private-sources.conf
 !ticket-infra/nginx.public-source-headers.conf
 !ticket-infra/Dockerfile.dockerignore
+!ticket-infra/mcp/
+!ticket-infra/mcp/package.json
+!ticket-infra/mcp/package-lock.json
+!ticket-infra/mcp/ostrovok/
+!ticket-infra/mcp/ostrovok/server.py
 
 **/.git
 **/.idea

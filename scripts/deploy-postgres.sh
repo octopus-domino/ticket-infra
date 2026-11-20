@@ -14,6 +14,15 @@ export CLIENT_API_PUBLIC_URL="${CLIENT_API_PUBLIC_URL:-${APP_CLIENT_API_PUBLIC_U
 docker network inspect codoc-client-api >/dev/null 2>&1 || docker network create codoc-client-api >/dev/null
 COMPOSE=(docker compose --env-file .env -f ticket-infra/compose.api.yml -f ticket-infra/compose.postgres.yml)
 if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then COMPOSE+=(-f ticket-infra/compose.walks.yml); fi
+case "${CODOC_OSTROVOK_MCP_ENABLED:-false}" in
+  true)
+    COMPOSE+=(--profile ostrovok-mcp)
+    export TRIP_HOTEL_MCP_URL="${TRIP_HOTEL_MCP_URL:-http://ostrovok-mcp:8192/mcp}"
+    export TRIP_HOTEL_MCP_TOOL="${TRIP_HOTEL_MCP_TOOL:-search_hotels}"
+    ;;
+  false) ;;
+  *) echo 'CODOC_OSTROVOK_MCP_ENABLED must be true or false.' >&2; exit 1 ;;
+esac
 # Validate interpolation before stopping services; --quiet never prints secrets.
 "${COMPOSE[@]}" config --quiet
 export CODOC_NGINX_APP_PORT="${CODOC_HTTP_PORT:-8090}"
@@ -61,10 +70,15 @@ if [[ "${CODOC_BUILD_ON_HOST:-true}" == true ]]; then
   codoc_prepare_builder
   codoc_build_image codoc-app runtime
   if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then codoc_build_image codoc-osm-mcp osm-mcp; fi
+  if [[ "${CODOC_OSTROVOK_MCP_ENABLED:-false}" == true ]]; then codoc_build_image codoc-ostrovok-mcp ostrovok-mcp; fi
 else
   docker image inspect codoc-app >/dev/null
+  if [[ "${CODOC_OSTROVOK_MCP_ENABLED:-false}" == true ]]; then docker image inspect codoc-ostrovok-mcp >/dev/null; fi
 fi
 codoc_stop_builder
+if [[ "${CODOC_OSTROVOK_MCP_ENABLED:-false}" == true ]]; then
+  "${COMPOSE[@]}" up -d --no-build --wait --wait-timeout 90 ostrovok-mcp
+fi
 "${COMPOSE[@]}" up -d --wait postgres
 database_changed=true
 "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-building-history.sql

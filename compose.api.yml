@@ -5,11 +5,21 @@ services:
     build:
       context: ..
       dockerfile: ticket-infra/Dockerfile
+      args:
+        VITE_ENABLE_TRIP_PLANNER: ${ENABLE_TRIP_PLANNER:-false}
     restart: unless-stopped
     ports:
       - "127.0.0.1:${CODOC_HTTP_PORT:-8090}:80"
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      ENABLE_TRIP_PLANNER: ${ENABLE_TRIP_PLANNER:-false}
+      YANDEX_RASP_API_KEY: ${YANDEX_RASP_API_KEY:-}
+      TRIP_NOMINATIM_SEARCH_URL: ${TRIP_NOMINATIM_SEARCH_URL:-}
+      TRIP_HOTEL_MCP_URL: ${TRIP_HOTEL_MCP_URL:-}
+      TRIP_HOTEL_MCP_TOOL: ${TRIP_HOTEL_MCP_TOOL:-}
+      TRIP_HOTEL_REGISTRY_FILE: ${TRIP_HOTEL_REGISTRY_FILE:-}
+      TRIP_HOTEL_CONNECT_TIMEOUT: ${TRIP_HOTEL_CONNECT_TIMEOUT:-3s}
+      TRIP_HOTEL_REQUEST_TIMEOUT: ${TRIP_HOTEL_REQUEST_TIMEOUT:-15s}
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${DB_SCHEMA_MODE:-validate}
       JWT_SECRET: ${JWT_SECRET:?Set a random JWT_SECRET in .env}
       APP_SECRETS_ENCRYPTION_KEY: ${APP_SECRETS_ENCRYPTION_KEY:?Set a stable encryption key}
@@ -68,6 +78,19 @@ services:
     volumes:
       - ${CODOC_APP_STORAGE:-app-data}:/app/data
       - ${HOITH_IMPORT_DIR:-../data/imports}:/app/imports:ro
+    networks: [api]
+  ostrovok-mcp:
+    profiles: [ostrovok-mcp]
+    image: codoc-ostrovok-mcp
+    restart: unless-stopped
+    mem_limit: 64m
+    memswap_limit: 64m
+    cpus: 0.15
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8192/health', timeout=2).close()"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
     networks: [api]
   gateway:
     image: tykio/tyk-gateway:v5.16.0
