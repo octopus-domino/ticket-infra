@@ -15,6 +15,11 @@ CITIES = {
     "санкт-петербург": "st._petersburg", "saint petersburg": "st._petersburg",
     "казань": "kazan", "kazan": "kazan",
     "сочи": "sochi", "sochi": "sochi",
+    "тверь": "tver", "tver": "tver",
+    "кострома": "kostroma", "kostroma": "kostroma",
+    "иваново": "ivanovo", "ivanovo": "ivanovo",
+    "дмитров": "dmitrov", "dmitrov": "dmitrov",
+    "павловский посад": "pavlovskiy_posad", "pavlovsky posad": "pavlovskiy_posad",
 }
 TOOL = "search_hotels"
 PROTOCOL = "2025-03-26"
@@ -56,7 +61,7 @@ def catalog_locations(html):
 
 
 def catalog_slug(label):
-    tokens = [part.strip().lower().replace("?", "?") for part in label.split(",")]
+    tokens = [re.sub(r"^г\.\s*", "", part.strip().lower()).replace("?", "?") for part in label.split(",")]
     matches = {CITIES[token] for token in tokens if token in CITIES}
     return next(iter(matches)) if len(matches) == 1 else None
 
@@ -124,17 +129,23 @@ class Catalog:
         known = self.cache.get(slug)
         if known and known[0] > now:
             return {"catalogOnly": True, "hotels": known[1]}
-        if self.next_fetch > now:
-            raise ValueError("Catalog temporarily busy")
-        self.next_fetch = now + 2
-        request = Request(f"{ORIGIN}/hotel/russia/{slug}", headers={"User-Agent": "CoDoc-HotelCatalog/1.0 (+https://www.codoc.site)"})
-        with build_opener(SameOriginRedirect()).open(request, timeout=6) as response:
-            body = response.read(MAX_PAGE + 1)
-        if len(body) > MAX_PAGE:
-            raise ValueError("Catalog response too large")
-        hotels = parse_catalog(body.decode("utf-8"), city.strip())
-        if not hotels:
-            raise ValueError("Catalog has no recognized listings")
+        try:
+            if self.next_fetch > now:
+                raise ValueError("Catalog temporarily busy")
+            self.next_fetch = now + 2
+            request = Request(f"{ORIGIN}/hotel/russia/{slug}",
+                              headers={"User-Agent": "CoDoc-HotelCatalog/1.0 (+https://www.codoc.site)"})
+            with build_opener(SameOriginRedirect()).open(request, timeout=6) as response:
+                body = response.read(MAX_PAGE + 1)
+            if len(body) > MAX_PAGE:
+                raise ValueError("Catalog response too large")
+            hotels = parse_catalog(body.decode("utf-8"), city.strip())
+            if not hotels:
+                raise ValueError("Catalog has no recognized listings")
+        except (OSError, ValueError):
+            if known and now - known[0] <= 86400:
+                return {"catalogOnly": True, "hotels": known[1]}
+            raise
         self.cache[slug] = (now + 1800, hotels)
         return {"catalogOnly": True, "hotels": hotels}
 
