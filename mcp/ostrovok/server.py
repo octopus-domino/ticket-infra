@@ -21,6 +21,7 @@ PROTOCOL = "2025-03-26"
 MAX_PAGE = 2_000_000
 SCRIPTS = re.compile(r'<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script>', re.I | re.S)
 
+PAGE_DATA = re.compile(r'<script\b[^>]*\bid=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>', re.I | re.S)
 
 class SameOriginRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -30,8 +31,39 @@ class SameOriginRedirect(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+def catalog_locations(html):
+    block = PAGE_DATA.search(html)
+    if block is None:
+        return {}
+    try:
+        hotels = json.loads(block[1])["props"]["pageProps"]["serpData"]["hotels"]
+    except (ValueError, KeyError, TypeError):
+        return {}
+    if not isinstance(hotels, list):
+        return {}
+    locations = {}
+    for hotel in hotels:
+        if not isinstance(hotel, dict):
+            continue
+        location = hotel.get("location")
+        identifier = hotel.get("masterId")
+        if not isinstance(location, dict) or not isinstance(identifier, (int, str)):
+            continue
+        lat, lon = location.get("latitude"), location.get("longitude")
+        if type(lat) in (int, float) and type(lon) in (int, float) and -85 <= lat <= 85 and -180 <= lon <= 180:
+            locations[str(identifier)] = {"latitude": lat, "longitude": lon}
+    return locations
+
+
+def catalog_slug(label):
+    tokens = [part.strip().lower().replace("?", "?") for part in label.split(",")]
+    matches = {CITIES[token] for token in tokens if token in CITIES}
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
 def parse_catalog(html, city):
     hotels = {}
+    locations = catalog_locations(html)
     for block in SCRIPTS.findall(html):
         try:
             data = json.loads(block)
@@ -67,6 +99,7 @@ def parse_catalog(html, city):
                         row["rating"] = value
                 except (ValueError, TypeError):
                     pass
+            row.update(locations.get(hotel_id, {}))
             hotels[hotel_id] = row
     return list(hotels.values())[:30]
 
@@ -84,7 +117,7 @@ class Catalog:
         start, end = date.fromisoformat(args["checkIn"]), date.fromisoformat(args["checkOut"])
         if not 1 <= (end - start).days <= 90:
             raise ValueError("Invalid dates")
-        slug = CITIES.get(city.strip().lower().replace("ё", "е"))
+        slug = catalog_slug(city)
         if not slug:
             raise ValueError("City catalog is not configured")
         now = time.monotonic()
