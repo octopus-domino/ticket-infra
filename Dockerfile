@@ -103,9 +103,10 @@ CMD ["/opt/bridge/bin/mcp-proxy", "--host", "0.0.0.0", "--port", "8000", "--allo
 
 FROM python:3.12-alpine AS ostrovok-mcp
 WORKDIR /srv/mcp
-COPY ticket-infra/mcp/ostrovok/server.py .
+COPY --chmod=0444 ticket-infra/mcp/ostrovok/server.py .
 ENV MCP_BIND=0.0.0.0 MCP_PORT=8192
 USER 65534:65534
+RUN python -B -c "import server"
 CMD ["python", "-u", "server.py"]
 
 FROM eclipse-temurin:17-jre-alpine AS runtime
