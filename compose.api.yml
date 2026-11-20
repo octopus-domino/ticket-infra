@@ -87,9 +87,9 @@ services:
     memswap_limit: 64m
     cpus: 0.15
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8192/health', timeout=2).close()"]
+      test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://127.0.0.1:8192/health"]
       interval: 10s
-      timeout: 3s
+      timeout: 8s
       retries: 6
     networks: [api]
   gateway:
