@@ -85,3 +85,10 @@ python -m unittest discover -s scripts/tests -p test_runtime_publish.py
 Очистка по умолчанию показывает кандидатов. Удаляются только старые каталоги `/tmp/codoc-runtime-release-*` с собственным маркером, без перехода по симлинкам. Данные приложения, Docker volumes и образы эта команда не удаляет. Одновременную публикацию нескольких компонентов не запускайте: образ приложения общий.
 
 `runtime_disk.py` показывает свободное место и расход Docker. С явным `--prune-build-cache` удаляет только неиспользуемый кеш сборки, сохраняя указанный резерв. Последующие сборки могут занять больше времени; контейнеры, образы, volumes и пользовательские документы не удаляются.
+
+## Ostrovok catalog adapter
+
+On the server, update the existing ticket-infra Git checkout with a fast-forward pull and run
+`bash scripts/publish-ostrovok-runtime.sh`. It validates the committed adapter source, updates and
+restarts only the existing Ostrovok MCP container, checks health and rolls back the file on failure.
+The image tag used by Compose is persisted after the health check.
