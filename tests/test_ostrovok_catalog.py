@@ -10,6 +10,18 @@ spec.loader.exec_module(catalog)
 
 
 class CatalogCoordinatesTest(unittest.TestCase):
+    def test_reads_visible_listings_missing_from_structured_metadata(self):
+        page = {'props': {'pageProps': {'serpData': {'hotels': [{
+            'masterId': '42', 'name': 'Visible hotel', 'rating': 9, 'stars': 4,
+            'location': {'latitude': 59.94, 'longitude': 30.34, 'address': 'Nevsky Avenue'},
+        }]}}}}
+        html = (f'<script id="__NEXT_DATA__">{json.dumps(page)}</script>'
+                '<a href="/hotel/russia/st._petersburg/mid42/visible_hotel/">Book</a>')
+        self.assertEqual(catalog.parse_catalog(html, 'Saint Petersburg'), [{
+            'id': '42', 'city': 'Saint Petersburg', 'name': 'Visible hotel', 'rating': 9, 'stars': 4,
+            'address': 'Nevsky Avenue', 'latitude': 59.94, 'longitude': 30.34,
+            'sourceUrl': 'https://ostrovok.ru/hotel/russia/st._petersburg/mid42/visible_hotel/',
+        }])
     def test_joins_coordinates_by_master_id_and_ignores_invalid_locations(self):
         items = [{'item': {'@type': 'Hotel', 'name': f'Hotel {i}',
                            'url': f'https://ostrovok.ru/hotel/russia/moscow/mid{i}/'}}

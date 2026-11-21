@@ -1,6 +1,7 @@
 """Read-only MCP adapter for public Ostrovok city catalog JSON-LD."""
 
 import json
+from html import unescape
 import os
 import re
 import time
@@ -27,6 +28,7 @@ MAX_PAGE = 2_000_000
 SCRIPTS = re.compile(r'<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script>', re.I | re.S)
 
 PAGE_DATA = re.compile(r'<script\b[^>]*\bid=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>', re.I | re.S)
+HOTEL_LINK = re.compile(r'''href=["'](?:https://ostrovok\.ru)?(/hotel/russia/[a-z0-9_./-]+/mid(\d+)/[a-z0-9_-]+/)["']''', re.I)
 
 class SameOriginRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -36,28 +38,54 @@ class SameOriginRedirect(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def catalog_locations(html):
+def search_page(html):
     block = PAGE_DATA.search(html)
     if block is None:
         return {}
     try:
-        hotels = json.loads(block[1])["props"]["pageProps"]["serpData"]["hotels"]
+        data = json.loads(block[1])["props"]["pageProps"]["serpData"]
+        return data if isinstance(data, dict) else {}
     except (ValueError, KeyError, TypeError):
         return {}
+
+
+def page_hotels(html, city, data):
+    hotels = data.get("hotels")
     if not isinstance(hotels, list):
         return {}
-    locations = {}
+    links = {identifier: ORIGIN + path for path, identifier in HOTEL_LINK.findall(html)}
+    rows = {}
     for hotel in hotels:
         if not isinstance(hotel, dict):
             continue
         location = hotel.get("location")
         identifier = hotel.get("masterId")
-        if not isinstance(location, dict) or not isinstance(identifier, (int, str)):
+        if not isinstance(identifier, (int, str)) or not str(identifier).isdigit():
             continue
-        lat, lon = location.get("latitude"), location.get("longitude")
-        if type(lat) in (int, float) and type(lon) in (int, float) and -85 <= lat <= 85 and -180 <= lon <= 180:
-            locations[str(identifier)] = {"latitude": lat, "longitude": lon}
-    return locations
+        identifier = str(identifier)
+        row = {}
+        if isinstance(location, dict):
+            lat, lon = location.get("latitude"), location.get("longitude")
+            if type(lat) in (int, float) and type(lon) in (int, float) and -85 <= lat <= 85 and -180 <= lon <= 180:
+                row.update(latitude=lat, longitude=lon)
+            if isinstance(location.get("address"), str):
+                row["address"] = location["address"][:500]
+        name = hotel.get("name")
+        if identifier in links and isinstance(name, str) and name.strip():
+            row.update(id=identifier, city=city, name=unescape(name.strip())[:300], sourceUrl=links[identifier])
+            for field, maximum in (("rating", 10), ("stars", 5)):
+                value = hotel.get(field)
+                if type(value) in (int, float) and 0 < value <= maximum and (field != "stars" or type(value) is int):
+                    row[field] = value
+            images = hotel.get("images")
+            if isinstance(images, list):
+                for image in images:
+                    template = image.get("tmpl") if isinstance(image, dict) else None
+                    if isinstance(template, str) and template.startswith("https://cdn.ostrovok.ru/t/{size}/"):
+                        row["photoUrl"] = template.replace("{size}", "640x400")
+                        break
+        rows[identifier] = row
+    return rows
 
 
 def catalog_slug(label):
@@ -66,9 +94,9 @@ def catalog_slug(label):
     return next(iter(matches)) if len(matches) == 1 else None
 
 
-def parse_catalog(html, city):
-    hotels = {}
-    locations = catalog_locations(html)
+def parse_catalog(html, city, data=None):
+    page_rows = page_hotels(html, city, search_page(html) if data is None else data)
+    hotels = {identifier: row for identifier, row in page_rows.items() if "id" in row}
     for block in SCRIPTS.findall(html):
         try:
             data = json.loads(block)
@@ -104,8 +132,7 @@ def parse_catalog(html, city):
                         row["rating"] = value
                 except (ValueError, TypeError):
                     pass
-            row.update(locations.get(hotel_id, {}))
-            hotels[hotel_id] = row
+            hotels[hotel_id] = {**row, **page_rows.get(hotel_id, {})}
     return list(hotels.values())[:30]
 
 
@@ -117,7 +144,9 @@ class Catalog:
     def search(self, args):
         city = args.get("city")
         guests = args.get("guests")
-        if not isinstance(city, str) or len(city) > 120 or type(guests) is not int or not 1 <= guests <= 12:
+        page = args.get("page", 1)
+        if (not isinstance(city, str) or len(city) > 120 or type(guests) is not int or not 1 <= guests <= 12
+                or type(page) is not int or not 1 <= page <= 100):
             raise ValueError("Invalid hotel query")
         start, end = date.fromisoformat(args["checkIn"]), date.fromisoformat(args["checkOut"])
         if not 1 <= (end - start).days <= 90:
@@ -126,28 +155,37 @@ class Catalog:
         if not slug:
             raise ValueError("City catalog is not configured")
         now = time.monotonic()
-        known = self.cache.get(slug)
+        key = (slug, page)
+        known = self.cache.get(key)
         if known and known[0] > now:
-            return {"catalogOnly": True, "hotels": known[1]}
+            return known[1]
         try:
             if self.next_fetch > now:
                 raise ValueError("Catalog temporarily busy")
-            self.next_fetch = now + 2
-            request = Request(f"{ORIGIN}/hotel/russia/{slug}",
+            suffix = f"?page={page}" if page > 1 else ""
+            request = Request(f"{ORIGIN}/hotel/russia/{slug}{suffix}",
                               headers={"User-Agent": "CoDoc-HotelCatalog/1.0 (+https://www.codoc.site)"})
             with build_opener(SameOriginRedirect()).open(request, timeout=6) as response:
                 body = response.read(MAX_PAGE + 1)
             if len(body) > MAX_PAGE:
                 raise ValueError("Catalog response too large")
-            hotels = parse_catalog(body.decode("utf-8"), city.strip())
-            if not hotels:
+            html = body.decode("utf-8")
+            data = search_page(html)
+            hotels = parse_catalog(html, city.strip(), data)
+            if not hotels and page == 1:
                 raise ValueError("Catalog has no recognized listings")
+            count, size = data.get("totalHotels"), data.get("pageSize")
+            has_more = bool(hotels and page < 100 and type(count) is int and type(size) is int and page * size < count)
         except (OSError, ValueError):
+            self.next_fetch = now + 2
             if known and now - known[0] <= 86400:
-                return {"catalogOnly": True, "hotels": known[1]}
+                return known[1]
             raise
-        self.cache[slug] = (now + 1800, hotels)
-        return {"catalogOnly": True, "hotels": hotels}
+        result = {"catalogOnly": True, "hotels": hotels, "hasMore": has_more}
+        if len(self.cache) >= 128:
+            del self.cache[next(iter(self.cache))]
+        self.cache[key] = (now + 1800, result)
+        return result
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -197,7 +235,8 @@ class Handler(BaseHTTPRequestHandler):
             result = {"tools": [{"name": TOOL, "description": "Find public hotel listings in a supported Russian city. Prices and availability are unverified.",
                                 "inputSchema": {"type": "object", "properties": {
                                     "city": {"type": "string"}, "checkIn": {"type": "string"},
-                                    "checkOut": {"type": "string"}, "guests": {"type": "integer"}},
+                                    "checkOut": {"type": "string"}, "guests": {"type": "integer"},
+                                    "page": {"type": "integer", "minimum": 1, "maximum": 100}},
                                     "required": ["city", "checkIn", "checkOut", "guests"]}}]}
         elif method == "tools/call":
             try:
