@@ -26,6 +26,7 @@ docker restart "$container" >/dev/null
 for ((attempt=0; attempt<20; attempt++)); do
     if docker exec "$container" wget -q -T 2 -O /dev/null http://127.0.0.1:8192/health; then
         docker commit "$container" codoc-ostrovok-mcp:latest >/dev/null
+        bash "$root/scripts/lib/post-deploy-docker-cleanup.sh"
         echo "Ostrovok adapter published in $container"
         exit 0
     fi

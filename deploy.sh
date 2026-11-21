@@ -230,4 +230,5 @@ if [[ "$DEPLOY_CLIENT_API" == true ]]; then
   code="$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "$APP_CLIENT_API_PUBLIC_URL/recognition/capabilities")"
   [[ "$code" == 401 || "$code" == 403 ]] || fail "Client API without a key returned $code (expected 401/403). Check Nginx /client-api/ and Tyk."
 fi
+bash "$ROOT/ticket-infra/scripts/lib/post-deploy-docker-cleanup.sh"
 printf '\nDeployment complete. Keep the stopped previous container and backup until acceptance.\n'

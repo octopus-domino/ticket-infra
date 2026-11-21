@@ -81,6 +81,11 @@ def publish_web(config, stage, release):
             run('docker', 'cp', str(item) + '/.', config['container'] + ':' + destination + '/' + item.name + '/')
         else:
             run('docker', 'cp', str(item), config['container'] + ':' + destination + '/' + item.name)
+    path = '/private-journey/' if config['component'] == 'private-journey' else '/'
+    served = run('docker', 'exec', config['container'], 'curl', '-fsS', '--max-time', '10',
+                 'http://127.0.0.1' + path).stdout
+    if served != (web / 'index.html').read_bytes():
+        raise RuntimeError('Nginx did not serve the new frontend index')
     print('Frontend published and persisted. Java and Nginx were not restarted.', flush=True)
 
 
@@ -154,6 +159,7 @@ def main():
     finally:
         shutil.rmtree(stage)
         payload.unlink(missing_ok=True)
+    subprocess.run(['bash', '-s'], input=config['cleanup_script'], text=True, check=True)
 
 
 if __name__ == '__main__':

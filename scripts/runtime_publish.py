@@ -29,6 +29,8 @@ def ssh_options(args):
 
 def run_remote(args, config):
     """Send a versioned remote program through stdin without installing a server or editing Nginx."""
+    cleanup = Path(__file__).with_name('lib') / 'post-deploy-docker-cleanup.sh'
+    config = dict(config, cleanup_script=cleanup.read_text(encoding='utf-8'))
     encoded = base64.b64encode(json.dumps(config).encode()).decode()
     source = Path(__file__).with_name('runtime_publish_remote.py').read_text(encoding='utf-8')
     command = 'python3 - ' + shlex.quote(encoded)

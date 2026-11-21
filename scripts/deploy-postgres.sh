@@ -96,5 +96,6 @@ app_ready=true
 if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true ]]; then
   sudo -n env CODOC_NGINX_APP_PORT="$CODOC_NGINX_APP_PORT" bash "$ROOT/ticket-infra/scripts/install-external-nginx.sh"
 fi
-echo "PostgreSQL deployment is healthy. Backup: $backup"
 "${COMPOSE[@]}" ps
+bash "$ROOT/ticket-infra/scripts/lib/post-deploy-docker-cleanup.sh"
+echo "PostgreSQL deployment is healthy. Backup: $backup"

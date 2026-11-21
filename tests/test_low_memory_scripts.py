@@ -27,7 +27,7 @@ class ScriptsTest(unittest.TestCase):
         # Fixtures are deliberately retained for diagnosis; no recursive deletion is performed.
         self.assertTrue(root.resolve().is_relative_to((WORKSPACE/'temp').resolve()))
         files=['build.sh','build.ps1','deploy.sh','Dockerfile','buildkitd-low-memory.toml',
-               'scripts/lib/low-memory-build.sh','scripts/migrate-postgres.sh',
+               'scripts/lib/low-memory-build.sh','scripts/lib/post-deploy-docker-cleanup.sh','scripts/migrate-postgres.sh',
                'scripts/deploy-postgres.sh','scripts/check-deploy-config.sh','scripts/install-external-nginx.sh','scripts/ensure-private-journey.sh',
                'scripts/journey-batch-owner.sql','scripts/journey-print-sources.sql','scripts/journey-albums.sql',
                'scripts/workflow-visits.sql','scripts/poetry-sets.sql',
@@ -133,6 +133,7 @@ class ScriptsTest(unittest.TestCase):
     def test_migration_backs_up_before_build_and_loads_targets_sequentially(self):
         root,env=self.fixture('legacy',FAKE_REQUIRE_BACKUP=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/migrate-postgres.sh','--migrate');self.success(result)
+        self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
         self.assertEqual(state['targets'],['runtime','migration'])
         self.assertFalse(state['builder_running'])
         self.assertFalse(state['containers']['legacy']['running'])
@@ -146,6 +147,7 @@ class ScriptsTest(unittest.TestCase):
     def test_migration_build_failure_resumes_h2_without_publishing_postgres_settings(self):
         root,env=self.fixture('legacy',FAKE_FAIL_BUILD=1,FAKE_REQUIRE_BACKUP=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/migrate-postgres.sh','--migrate')
+        self.assertFalse(any('prune' in call for call in state['calls']))
         self.assertEqual(result.returncode,42,result.stdout+result.stderr)
         self.assertFalse(state['builder_running'])
         self.assertTrue(state['containers']['legacy']['running'])
@@ -163,6 +165,7 @@ class ScriptsTest(unittest.TestCase):
     def test_postgres_update_dumps_before_build_and_restarts_existing_gateway(self):
         root,env=self.fixture(FAKE_REQUIRE_BACKUP=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/deploy-postgres.sh');self.success(result)
+        self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
         self.assertTrue(state['dumped'])
         self.assertTrue(state['sql_started'])
         self.assertEqual(state['targets'],['runtime'])
@@ -181,6 +184,7 @@ class ScriptsTest(unittest.TestCase):
     def test_ostrovok_sidecar_uses_the_shared_builder_and_starts_after_it(self):
         root,env=self.fixture(FAKE_REQUIRE_BACKUP=1,CODOC_OSTROVOK_MCP_ENABLED='true',ENABLE_TRIP_PLANNER='true')
         result,state=self.run_script(root,env,'ticket-infra/scripts/deploy-postgres.sh');self.success(result)
+        self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
         self.assertEqual(state['targets'],['runtime','ostrovok-mcp'])
         calls=state['calls']
         runtime=next(index for index,call in enumerate(calls) if 'VITE_ENABLE_TRIP_PLANNER=true' in call)
@@ -192,6 +196,7 @@ class ScriptsTest(unittest.TestCase):
     def test_postgres_sql_failure_keeps_app_stopped_for_review(self):
         root,env=self.fixture(FAKE_FAIL_SQL=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/deploy-postgres.sh')
+        self.assertFalse(any('prune' in call for call in state['calls']))
         self.assertEqual(result.returncode,31,result.stdout+result.stderr)
         self.assertTrue(state['sql_started'])
         self.assertFalse(state['containers']['pgapp']['running'])
@@ -201,6 +206,7 @@ class ScriptsTest(unittest.TestCase):
         root,env=self.fixture('legacy',FAKE_REQUIRE_BACKUP=1)
         env['CODOC_DEPLOY_SNAPSHOT_ROOT']=posix(root)
         result,state=self.run_script(root,env,'ticket-infra/deploy.sh');self.success(result)
+        self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
         self.assertFalse(state['containers']['legacy']['running'])
         self.assertTrue(state['containers']['new-app']['running'])
         self.assertFalse(state['builder_running'])
@@ -209,6 +215,7 @@ class ScriptsTest(unittest.TestCase):
         root,env=self.fixture('legacy',FAKE_FAIL_BUILD=1)
         env['CODOC_DEPLOY_SNAPSHOT_ROOT']=posix(root)
         result,state=self.run_script(root,env,'ticket-infra/deploy.sh')
+        self.assertFalse(any('prune' in call for call in state['calls']))
         self.assertEqual(result.returncode,42,result.stdout+result.stderr)
         self.assertTrue(state['containers']['legacy']['running'])
         self.assertFalse(state['builder_running'])

@@ -92,3 +92,13 @@ On the server, update the existing ticket-infra Git checkout with a fast-forward
 `bash scripts/publish-ostrovok-runtime.sh`. It validates the committed adapter source, updates and
 restarts only the existing Ostrovok MCP container, checks health and rolls back the file on failure.
 The image tag used by Compose is persisted after the health check.
+
+## Docker cleanup after deployment
+
+After a successful health check, full deployments, PostgreSQL migration,
+frontend and backend runtime publishing, and Ostrovok runtime publishing run
+`scripts/lib/post-deploy-docker-cleanup.sh` on the deployment host. It removes
+unused cache from the default Docker builder and dangling images. It keeps
+tagged rollback images, stopped containers, volumes, and backups. The separate
+resource-limited Buildx builder is left stopped. A failed deployment skips
+cleanup, and a cleanup failure is reported without rolling back a healthy release.

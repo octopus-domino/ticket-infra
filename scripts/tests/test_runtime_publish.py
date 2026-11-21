@@ -27,6 +27,24 @@ class RuntimePublishTest(unittest.TestCase):
             with zipfile.ZipFile(payload) as archive:
                 self.assertEqual(set(archive.namelist()), {'web/index.html', 'web/assets/app.js'})
 
+    def test_web_publish_checks_that_nginx_serves_the_new_index(self):
+        for component in ('editor', 'private-journey'):
+            for response in (b'new index', b'old index'):
+                with self.subTest(component=component, response=response), tempfile.TemporaryDirectory() as directory:
+                    stage = Path(directory)
+                    web = stage / 'web'
+                    web.mkdir()
+                    (web / 'index.html').write_bytes(b'new index')
+                    config = dict(container='test', component=component)
+                    with patch.object(remote, 'build_image'), patch.object(remote, 'run', return_value=SimpleNamespace(stdout=response)) as call:
+                        if response == b'new index':
+                            remote.publish_web(config, stage, 'release')
+                        else:
+                            with self.assertRaisesRegex(RuntimeError, 'did not serve'):
+                                remote.publish_web(config, stage, 'release')
+                        suffix = '/private-journey/' if component == 'private-journey' else '/'
+                        self.assertEqual(call.call_args.args[-1], 'http://127.0.0.1' + suffix)
+
     def test_traversal_or_unexpected_payloads_are_rejected_before_extraction(self):
         for name in ['web/../../outside', '/web/index.html', 'BOOT-INF/classes/evil.class']:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
