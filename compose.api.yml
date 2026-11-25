@@ -1,6 +1,13 @@
 name: codoc
 services:
+  routing:
+    extends:
+      file: compose.routing.yml
+      service: routing
   app:
+    depends_on:
+      routing:
+        condition: service_healthy
     image: codoc-app
     build:
       context: ..
@@ -34,7 +41,7 @@ services:
       SMTP_AUTH: ${SMTP_AUTH:-true}
       EMAIL_FROM: ${EMAIL_FROM:-${SMTP_USER:-}}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL:?Set APP_FRONTEND_URL}
-      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx1024m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx832m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
       OMP_THREAD_LIMIT: "1"
       MALLOC_ARENA_MAX: "2"
       SERVER_TOMCAT_THREADS_MAX: "32"
@@ -45,29 +52,12 @@ services:
       APP_CLIENT_API_TYK_SECRET: ${TYK_ADMIN_SECRET:?Set a random TYK_ADMIN_SECRET}
       APP_CLIENT_API_PUBLIC_URL: ${CLIENT_API_PUBLIC_URL:?Set CLIENT_API_PUBLIC_URL}
       APP_RECOGNITION_OLLAMA_ENABLED: "false"
-      TWOGIS_API_KEY: ${TWOGIS_API_KEY:-}
-      APP_JOURNEYS_WIKIMAPIA_KEY: ${WIKIMAPIA_API_KEY:-}
-      APP_JOURNEYS_YANDEX_API_KEY: ${YANDEX_MAPS_API_KEY:-}
-      APP_HOITH_GPKG_PATH: /app/imports/hoith.gpkg
-      APP_HOITH_IMPORT_ON_STARTUP: ${HOITH_IMPORT_ON_STARTUP:-false}
-      APP_HOITH_CITIES: ${HOITH_CITIES:-}
-      APP_HOITH_REFRESH_ON_START: ${HOITH_REFRESH_ON_START:-false}
-      APP_HOITH_BEFORE_YEAR: ${HOITH_BEFORE_YEAR:-1945}
-      APP_HOITH_BACKGROUND: ${HOITH_BACKGROUND:-false}
-      APP_HOITH_MIN_FREE_SPACE_MB: ${HOITH_MIN_FREE_SPACE_MB:-768}
-      APP_MYSTIC_REFRESH_ON_START: ${MYSTIC_REFRESH_ON_START:-false}
-      APP_JOURNEYS_GEOCODER_URL: ${GEOCODER_URL:-https://photon.komoot.io/api/}
-      APP_JOURNEYS_OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
       APP_POETRY_POEMSHIP_URL: ${APP_POETRY_POEMSHIP_URL:-https://poemship.com/mcp}
       APP_POETRY_POETREE_URL: ${APP_POETRY_POETREE_URL:-https://versologie.cz/poetree/api}
-      OSM_MCP_ENABLED: ${OSM_MCP_ENABLED:-false}
-      OSM_MCP_URL: ${OSM_MCP_URL:-http://localhost:8000/mcp}
-      COMMONS_MCP_ENABLED: ${COMMONS_MCP_ENABLED:-true}
-      COMMONS_MCP_URL: ${COMMONS_MCP_URL:-https://gateway.pipeworx.io/commons-wikimedia/mcp}
       WORKFLOW_ADMIN_USER_IDS: ${WORKFLOW_ADMIN_USER_IDS:-}
       APP_CONNECTORS_ALLOWED_ORIGINS: ${CONNECTOR_ALLOWED_ORIGINS:-}
-    mem_limit: 1792m
-    mem_reservation: 1024m
+    mem_limit: 1408m
+    mem_reservation: 768m
     cpus: 1.5
     healthcheck:
       test: [CMD-SHELL, 'code=$$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/actuator/health); [ "$$code" = 200 ] || [ "$$code" = 401 ]']
@@ -77,7 +67,6 @@ services:
       retries: 30
     volumes:
       - ${CODOC_APP_STORAGE:-app-data}:/app/data
-      - ${HOITH_IMPORT_DIR:-../data/imports}:/app/imports:ro
     networks: [api]
   ostrovok-mcp:
     profiles: [ostrovok-mcp]
@@ -102,7 +91,7 @@ services:
       TYK_GW_STORAGE_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
       GOMAXPROCS: "1"
       GOMEMLIMIT: 300MiB
-    mem_limit: 384m
+    mem_limit: 160m
     volumes:
       - ./tyk/tyk.conf:/opt/tyk-gateway/tyk.conf:ro
       - ./tyk/apps:/opt/tyk-gateway/apps:ro
@@ -116,7 +105,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
     command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\" --maxmemory 96mb --maxmemory-policy noeviction"]
-    mem_limit: 160m
+    mem_limit: 128m
     volumes:
       - redis-data:/data
     healthcheck:
@@ -126,6 +115,7 @@ services:
       retries: 10
     networks: [api]
 volumes:
+  routing-data:
   app-data:
   redis-data:
 networks:

@@ -84,15 +84,15 @@ printf 'CODOC_APP_STORAGE=%q\nCODOC_HTTP_PORT=%q\nSPRING_PROFILES_ACTIVE=prod,po
 if [[ "${CODOC_BUILD_ON_HOST:-true}" == true ]]; then
   codoc_prepare_builder
   codoc_build_image codoc-app runtime
+  codoc_build_image codoc-routing routing-service
   codoc_build_image codoc-migration migration
 else
-  docker image inspect codoc-app >/dev/null
+  docker image inspect codoc-app codoc-routing >/dev/null
   docker image inspect codoc-migration >/dev/null
 fi
 codoc_stop_builder
 "${COMPOSE[@]}" up -d --wait postgres
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-building-history.sql
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-mystic-places.sql
+codoc_upgrade_routing_schema
 bootstrap="codoc-pg-bootstrap-$stamp-$$"
 "${COMPOSE[@]}" run -d --no-deps --name "$bootstrap" \
   -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
@@ -108,7 +108,7 @@ cleanup_bootstrap
 bootstrap=''
 migration_started=true
 "${COMPOSE[@]}" run --rm migration | tee "$backup/migration.log"
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-workflows.sql
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/document-service/src/main/resources/db/upgrade-workflows.sql
 "${COMPOSE[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > "$backup/postgres-after.dump"
 mv -- "$backup/postgres.env.pending" "$ROOT/.postgres.env"
 codoc_start_postgres_app

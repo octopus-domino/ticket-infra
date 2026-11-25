@@ -51,7 +51,7 @@ export APP_FRONTEND_URL="${APP_FRONTEND_URL:-https://www.codoc.site}"
 export APP_SECRETS_ENCRYPTION_KEY="${APP_SECRETS_ENCRYPTION_KEY:-$JWT_SECRET}"
 export APP_CONNECTORS_ALLOWED_ORIGINS="${APP_CONNECTORS_ALLOWED_ORIGINS:-}"
 export APP_RECOGNITION_OLLAMA_ENABLED=false
-export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Xms128m -Xmx1024m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Xms128m -Xmx832m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
 export OMP_THREAD_LIMIT=1 MALLOC_ARENA_MAX=2
 export SERVER_TOMCAT_THREADS_MAX=32 SERVER_TOMCAT_THREADS_MIN_SPARE=4
 export SPRING_PROFILES_ACTIVE=prod
@@ -107,6 +107,8 @@ export CODOC_NGINX_APP_PORT=8080
 bash "$ROOT/ticket-infra/scripts/check-deploy-config.sh"
 gateway=(docker compose --project-name codoc-gateway --env-file /dev/null -f "$ROOT/ticket-infra/compose.gateway.yml")
 if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" config --quiet; fi
+routing_compose=(docker compose --project-name codoc -f "$ROOT/ticket-infra/compose.routing.yml")
+"${routing_compose[@]}" config --quiet
 stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 image="ticket-fullstack:$stamp"
 mkdir -p -- "$DATA_DIR" "$BACKUP_DIR"
@@ -160,10 +162,22 @@ codoc_prepare_builder
 build_options=()
 if [[ "$NO_CACHE" == true ]]; then build_options+=(--no-cache); fi
 codoc_build_image "$image" runtime "${build_options[@]}"
+codoc_build_image codoc-routing routing-service "${build_options[@]}"
 codoc_stop_builder
 codoc_restore_supporting
 
 docker network inspect codoc-client-api >/dev/null 2>&1 || docker network create codoc-client-api >/dev/null
+"${routing_compose[@]}" stop routing
+if [[ -f "$DATA_DIR/ticket-db.mv.db" ]]; then
+  "${routing_compose[@]}" run --rm --no-deps -T --user 0 \
+    -e H2_USER -e H2_PASSWORD -v "$DATA_DIR:/legacy:ro" --entrypoint /bin/sh routing -ec '
+      java -Dloader.main=ru.ticket.walks.infrastructure.persistence.LegacyWalkDatabaseMigration \
+        -cp /opt/routing/service.jar org.springframework.boot.loader.launch.PropertiesLauncher \
+        /legacy/ticket-db /app/data/routing/walks
+      chown routing:routing /app/data/routing/walks.mv.db
+    '
+fi
+"${routing_compose[@]}" up -d --no-build --wait --wait-timeout 120 routing
 if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" up -d --wait --wait-timeout 180; fi
 if [[ "$stopped" == true ]]; then
   previous="ticket-app-previous-$stamp"
@@ -178,7 +192,7 @@ done < <(compgen -e)
 launch() {
   docker run -d --name ticket-app --restart unless-stopped \
     --network codoc-client-api --network-alias app \
-    --cpus 1.5 --memory 1792m --memory-swap 1792m \
+    --cpus 1.5 --memory 1408m --memory-swap 1408m \
     --log-driver json-file --log-opt max-size=20m --log-opt max-file=3 \
     -p 127.0.0.1:8080:80 \
     --mount "type=bind,src=$DATA_DIR,dst=/app/data" \
@@ -203,6 +217,7 @@ if [[ "$FIRST_INSTALL" == true ]]; then
 fi
 launch
 ready
+codoc_check_routing_proxy ticket-app
 languages="$(docker exec ticket-app tesseract --list-langs 2>&1)"
 printf '%s\n' "$languages" | tee "$backup/ocr-languages.txt"
 if [[ $'\n'"$languages"$'\n' != *$'\neng\n'* || $'\n'"$languages"$'\n' != *$'\nrus\n'* ]]; then

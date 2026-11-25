@@ -20,3 +20,6 @@ echo 'Stopping CoDoc during the local build; the previous containers will be res
 codoc_stop_stack
 codoc_prepare_builder
 codoc_build_image "${CODOC_IMAGE:-codoc-app}" "${CODOC_BUILD_TARGET:-runtime}" "$@"
+if [[ "${CODOC_BUILD_TARGET:-runtime}" == runtime ]]; then
+  codoc_build_image codoc-routing routing-service "$@"
+fi

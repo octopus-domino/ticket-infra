@@ -78,6 +78,27 @@ codoc_restore_running() {
   done
 }
 
+codoc_upgrade_routing_schema() {
+  local sql="$ROOT/ticket-pdf/routing-service/src/main/resources/db"
+  {
+    cat "$sql/upgrade-routing-schema.sql"
+    printf 'SET LOCAL search_path TO routing, public;\n'
+    cat "$sql/upgrade-building-history.sql" "$sql/upgrade-mystic-places.sql"
+  } | "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+}
+
+codoc_check_routing_proxy() {
+  docker exec "$1" sh -ec '
+    body="$(curl -sS --max-time 5 -H "Content-Type: application/json" \
+      -d "{}" http://127.0.0.1/api/routing/v1/road)"
+    case "$body" in
+      *journey.route.invalid-route*) ;;
+      *) echo "Routing HTTP endpoint is unavailable through Nginx" >&2; exit 1;;
+    esac
+    curl -fsS --max-time 5 http://127.0.0.1/api/walks/v1/places/themes >/dev/null
+  '
+}
+
 codoc_start_postgres_app() {
   local legacy_gateway
   legacy_gateway="$(docker ps -a -q --filter label=com.docker.compose.project=codoc-gateway --filter label=com.docker.compose.service=gateway)"
@@ -88,6 +109,7 @@ codoc_start_postgres_app() {
   else
     "${COMPOSE[@]}" up -d --no-build --wait --wait-timeout 300 app gateway
   fi
+  codoc_check_routing_proxy "$("${COMPOSE[@]}" ps -q app)"
 }
 
 codoc_check_build_memory() {

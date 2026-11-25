@@ -73,6 +73,10 @@ try {
     $dockerArguments = @('buildx', 'build', '--builder', $builderName, '--load', '--progress=plain',
         '--platform', 'linux/amd64', '--file', (Join-Path $PSScriptRoot 'Dockerfile'), '--target', 'runtime', '--tag', $Tag) + $BuildArguments + @($workspaceRoot)
     Invoke-Docker @dockerArguments
+    $routingArguments = @('buildx', 'build', '--builder', $builderName, '--load', '--progress=plain',
+        '--platform', 'linux/amd64', '--file', (Join-Path $PSScriptRoot 'Dockerfile'),
+        '--target', 'routing-service', '--tag', 'codoc-routing') + $BuildArguments + @($workspaceRoot)
+    Invoke-Docker @routingArguments
     $buildExitCode = 0
 } catch {
     Write-Warning $_.Exception.Message

@@ -31,16 +31,22 @@ class ScriptsTest(unittest.TestCase):
                'scripts/deploy-postgres.sh','scripts/check-deploy-config.sh','scripts/install-external-nginx.sh','scripts/ensure-private-journey.sh',
                'scripts/journey-batch-owner.sql','scripts/journey-print-sources.sql','scripts/journey-albums.sql',
                'scripts/workflow-visits.sql','scripts/poetry-sets.sql',
-               'compose.api.yml','compose.postgres.yml','compose.gateway.yml']
+               'compose.api.yml','compose.postgres.yml','compose.gateway.yml','compose.routing.yml']
         for name in files:
             dest=root/'ticket-infra'/name;dest.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(WORKSPACE/'ticket-infra'/name,dest)
         (root/'ticket-editor').mkdir()
         (root/'private_jorney').mkdir()
         (root/'private_jorney/package-lock.json').write_text('{}')
-        sql=root/'ticket-pdf/src/main/resources/db';sql.mkdir(parents=True)
-        for name in ['upgrade-journeys.sql','upgrade-workflows.sql','upgrade-building-history.sql','upgrade-mystic-places.sql']:
-            shutil.copyfile(WORKSPACE/'ticket-pdf/src/main/resources/db'/name,sql/name)
+        for module, files in {
+            'document-service': ['upgrade-journeys.sql','upgrade-workflows.sql'],
+            'routing-service': ['upgrade-routing-schema.sql','upgrade-building-history.sql','upgrade-mystic-places.sql'],
+        }.items():
+            relative = Path('ticket-pdf') / module / 'src/main/resources/db'
+            sql = root / relative
+            sql.mkdir(parents=True)
+            for name in files:
+                shutil.copyfile(WORKSPACE / relative / name, sql / name)
         (root/'data').mkdir();(root/'data/ticket-db.mv.db').write_bytes(b'isolated fixture, not a database')
         values=dict(JWT_SECRET='test-only-secret-012345678901234567890123456789',
                     APP_FRONTEND_URL='https://codoc.test',DATABASE_PASSWORD='test-postgres',
@@ -92,7 +98,7 @@ class ScriptsTest(unittest.TestCase):
         self.assertEqual(len(creates),1)
         for setting in ['memory=2304m','memory-swap=2304m','cpu-period=100000','cpu-quota=200000']:
             self.assertIn(setting,creates[0])
-        self.assertEqual(state['targets'],['runtime','runtime'])
+        self.assertEqual(state['targets'],['runtime','routing-service','runtime','routing-service'])
 
     def test_not_enough_memory_restores_original_stack_without_building(self):
         root,env=self.fixture(available=1024)
@@ -134,7 +140,7 @@ class ScriptsTest(unittest.TestCase):
         root,env=self.fixture('legacy',FAKE_REQUIRE_BACKUP=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/migrate-postgres.sh','--migrate');self.success(result)
         self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
-        self.assertEqual(state['targets'],['runtime','migration'])
+        self.assertEqual(state['targets'],['runtime','routing-service','migration'])
         self.assertFalse(state['builder_running'])
         self.assertFalse(state['containers']['legacy']['running'])
         self.assertTrue(state['containers']['pgapp']['running'])
@@ -168,7 +174,7 @@ class ScriptsTest(unittest.TestCase):
         self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
         self.assertTrue(state['dumped'])
         self.assertTrue(state['sql_started'])
-        self.assertEqual(state['targets'],['runtime'])
+        self.assertEqual(state['targets'],['runtime','routing-service'])
         self.assertTrue(state['containers']['pgapp']['running'])
         self.assertTrue(state['containers']['gateway']['running'])
         self.assertFalse(state['builder_running'])
@@ -185,7 +191,7 @@ class ScriptsTest(unittest.TestCase):
         root,env=self.fixture(FAKE_REQUIRE_BACKUP=1,CODOC_OSTROVOK_MCP_ENABLED='true',ENABLE_TRIP_PLANNER='true')
         result,state=self.run_script(root,env,'ticket-infra/scripts/deploy-postgres.sh');self.success(result)
         self.assertEqual(state['calls'][-2:], [['builder','prune','--all','--force'], ['image','prune','--force']])
-        self.assertEqual(state['targets'],['runtime','ostrovok-mcp'])
+        self.assertEqual(state['targets'],['runtime','routing-service','ostrovok-mcp'])
         calls=state['calls']
         runtime=next(index for index,call in enumerate(calls) if 'VITE_ENABLE_TRIP_PLANNER=true' in call)
         start=next(index for index,call in enumerate(calls)
@@ -233,7 +239,7 @@ class ScriptsTest(unittest.TestCase):
     def test_powershell_uses_same_limits_and_restores_original_containers(self):
         root,env=self.fixture()
         result,state=self.run_powershell(root,env);self.success(result)
-        self.assertEqual(state['targets'],['runtime'])
+        self.assertEqual(state['targets'],['runtime','routing-service'])
         self.assertTrue(all(c['running'] for c in state['containers'].values()))
         self.assertFalse(state['builder_running'])
         create=next(call for call in state['calls'] if call[:2]==['buildx','create'])

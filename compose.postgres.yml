@@ -50,6 +50,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+  routing:
+    environment:
+      WALKS_DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}?currentSchema=routing,public
+      WALKS_DATABASE_USER: ${DATABASE_USER:-codoc}
+      WALKS_DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+      WALKS_DB_SCHEMA: routing
+      WALKS_DB_SCHEMA_MODE: validate
+    depends_on:
+      postgres:
+        condition: service_healthy
   app:
     networks:
       api: {}
@@ -57,7 +67,7 @@ services:
         aliases: [app]
     environment:
       SPRING_PROFILES_ACTIVE: prod,postgres
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}?currentSchema=public
       DATABASE_USER: ${DATABASE_USER:-codoc}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
       DB_SCHEMA_MODE: ${DB_SCHEMA_MODE:-validate}
@@ -78,11 +88,12 @@ services:
       H2_URL: ${H2_MIGRATION_URL:-jdbc:h2:file:/legacy/ticket-db;IFEXISTS=TRUE;ACCESS_MODE_DATA=r;FILE_LOCK=NO}
       H2_USER: ${H2_USER:-sa}
       H2_PASSWORD: ${H2_PASSWORD:-}
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-codoc}?currentSchema=public
       DATABASE_USER: ${DATABASE_USER:-codoc}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
     volumes:
       - ${CODOC_APP_STORAGE:-app-data}:/legacy:ro
+      - routing-data:/routing-h2:ro
     networks: [api]
     depends_on:
       postgres:

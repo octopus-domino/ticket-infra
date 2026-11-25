@@ -69,10 +69,11 @@ codoc_stop_stack
 if [[ "${CODOC_BUILD_ON_HOST:-true}" == true ]]; then
   codoc_prepare_builder
   codoc_build_image codoc-app runtime
+  codoc_build_image codoc-routing routing-service
   if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then codoc_build_image codoc-osm-mcp osm-mcp; fi
   if [[ "${CODOC_OSTROVOK_MCP_ENABLED:-false}" == true ]]; then codoc_build_image codoc-ostrovok-mcp ostrovok-mcp; fi
 else
-  docker image inspect codoc-app >/dev/null
+  docker image inspect codoc-app codoc-routing >/dev/null
   if [[ "${CODOC_OSTROVOK_MCP_ENABLED:-false}" == true ]]; then docker image inspect codoc-ostrovok-mcp >/dev/null; fi
 fi
 codoc_stop_builder
@@ -81,10 +82,9 @@ if [[ "${CODOC_OSTROVOK_MCP_ENABLED:-false}" == true ]]; then
 fi
 "${COMPOSE[@]}" up -d --wait postgres
 database_changed=true
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-building-history.sql
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-mystic-places.sql
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-journeys.sql
-"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/src/main/resources/db/upgrade-workflows.sql
+codoc_upgrade_routing_schema
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/document-service/src/main/resources/db/upgrade-journeys.sql
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/document-service/src/main/resources/db/upgrade-workflows.sql
 for migration in journey-batch-owner journey-print-sources journey-albums workflow-visits poetry-sets; do
   "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "ticket-infra/scripts/$migration.sql"
 done

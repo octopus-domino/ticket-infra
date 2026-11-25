@@ -49,6 +49,8 @@ def compose():
             done()
         if 'postgres' in args:
             state['containers'].setdefault('pg', container('codoc-postgres-1', 'postgres'))['running'] = True
+        if args[-1] == 'routing' or 'app' in args:
+            state['containers']['routing'] = container('codoc-routing-1', 'routing')
         if args[-1] in ['app', 'gateway']:
             if os.environ.get('FAKE_FAIL_START'):
                 done(code=39)

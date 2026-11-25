@@ -76,7 +76,7 @@ class RuntimePublishTest(unittest.TestCase):
         class Result:
             returncode = 0
             def __init__(self, value): self.stdout = value
-        config = dict(container='codoc-app-1', backend_port=8080, health_path='/api/journeys/routes/places/themes')
+        config = dict(container='codoc-app-1', backend_port=8080, health_path='/api/guest/recognition/capabilities')
         with patch.object(remote.subprocess, 'run', side_effect=[Result(b'401'), Result(b'200')]) as call, patch.object(remote.time, 'sleep'):
             self.assertTrue(remote.ready(config))
             self.assertEqual(call.call_count, 2)

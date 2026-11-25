@@ -29,7 +29,7 @@ def check_radius_growth(base, longitude, latitude):
     def search(radius, label):
         query = urllib.parse.urlencode(dict(longitude=longitude, latitude=latitude,
             language='ru', themes='bars', radiusKm=radius))
-        status, result, seconds = request(base, '/api/journeys/routes/places/themed?' + query)
+        status, result, seconds = request(base, '/api/walks/v1/places/themed?' + query)
         ids = {place['id'] for place in result.get('places', [])}
         print(json.dumps(dict(check=label, radius_km=radius, status=status, places=len(ids),
                               complete=result.get('complete'), seconds=seconds)), flush=True)
@@ -85,10 +85,10 @@ def main():
     args = parser.parse_args()
     if urllib.parse.urlparse(args.base_url).scheme not in ['http', 'https']:
         parser.error('Use an explicit HTTP(S) base URL')
-    status, _, seconds = request(args.base_url, '/api/journeys/routes/places/themes')
+    status, _, seconds = request(args.base_url, '/api/walks/v1/places/themes')
     print(json.dumps(dict(check='themes', status=status, seconds=seconds)), flush=True)
     assert status == 200, 'Public themes API is unavailable'
-    status, result, seconds = request(args.base_url, '/api/journeys/routes/road', dict(
+    status, result, seconds = request(args.base_url, '/api/routing/v1/road', dict(
         start=dict(longitude=args.longitude, latitude=args.latitude),
         end=dict(longitude=args.longitude + .004, latitude=args.latitude + .002), mode='foot'))
     points = len(result.get('coordinates', []))
@@ -103,7 +103,7 @@ def main():
 
     def search(radius, themes):
         query = urllib.parse.urlencode(dict(longitude=args.longitude, latitude=args.latitude, language='ru', themes=themes, radiusKm=radius))
-        status, result, seconds = request(args.base_url, '/api/journeys/routes/places/themed?' + query)
+        status, result, seconds = request(args.base_url, '/api/walks/v1/places/themed?' + query)
         print(json.dumps(dict(check='area', radius=radius, themes=themes, status=status,
                               count=len(result.get('places', [])), seconds=seconds)), flush=True)
         return status

@@ -1,0 +1,57 @@
+# Shared by the Compose stack and the standalone H2 deployment.
+services:
+  routing:
+    image: codoc-routing
+    build:
+      context: ..
+      dockerfile: ticket-infra/Dockerfile
+      target: routing-service
+    restart: unless-stopped
+    mem_limit: 640m
+    memswap_limit: 640m
+    cpus: 1.0
+    environment:
+      ENABLE_TRIP_PLANNER: ${ENABLE_TRIP_PLANNER:-false}
+      WALKS_PRINT_MEDIA_URL: http://app:8080
+      WALKS_DATABASE_URL: jdbc:h2:file:/app/data/routing/walks;INIT=CREATE SCHEMA IF NOT EXISTS ROUTING
+      WALKS_DB_SCHEMA: ROUTING
+      TWOGIS_API_KEY: ${TWOGIS_API_KEY:-}
+      APP_JOURNEYS_WIKIMAPIA_KEY: ${WIKIMAPIA_API_KEY:-}
+      APP_JOURNEYS_YANDEX_API_KEY: ${YANDEX_MAPS_API_KEY:-}
+      APP_HOITH_GPKG_PATH: /app/imports/hoith.gpkg
+      APP_HOITH_IMPORT_ON_STARTUP: ${HOITH_IMPORT_ON_STARTUP:-false}
+      APP_HOITH_CITIES: ${HOITH_CITIES:-}
+      APP_HOITH_REFRESH_ON_START: ${HOITH_REFRESH_ON_START:-false}
+      APP_HOITH_BEFORE_YEAR: ${HOITH_BEFORE_YEAR:-1945}
+      APP_HOITH_BACKGROUND: ${HOITH_BACKGROUND:-false}
+      APP_HOITH_MIN_FREE_SPACE_MB: ${HOITH_MIN_FREE_SPACE_MB:-768}
+      APP_MYSTIC_REFRESH_ON_START: ${MYSTIC_REFRESH_ON_START:-false}
+      APP_JOURNEYS_GEOCODER_URL: ${GEOCODER_URL:-https://photon.komoot.io/api/}
+      APP_JOURNEYS_OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      OSM_MCP_ENABLED: ${OSM_MCP_ENABLED:-false}
+      OSM_MCP_URL: ${OSM_MCP_URL:-http://localhost:8000/mcp}
+      COMMONS_MCP_ENABLED: ${COMMONS_MCP_ENABLED:-true}
+      COMMONS_MCP_URL: ${COMMONS_MCP_URL:-https://gateway.pipeworx.io/commons-wikimedia/mcp}
+      BROUTER_HTTP_ENABLED: ${BROUTER_HTTP_ENABLED:-true}
+      BROUTER_HTTP_URL: ${BROUTER_HTTP_URL:-https://brouter.de}
+      VALHALLA_ENABLED: ${VALHALLA_ENABLED:-true}
+      VALHALLA_URL: ${VALHALLA_URL:-https://valhalla1.openstreetmap.de}
+      OSRM_ENABLED: ${OSRM_ENABLED:-false}
+      OSRM_URL: ${OSRM_URL:-https://routing.openstreetmap.de}
+      BROUTER_ENABLED: ${BROUTER_ENABLED:-true}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-T", "3", "-O", "/dev/null", "http://127.0.0.1:8093/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+    volumes:
+      - routing-data:/app/data/routing
+      - ${HOITH_IMPORT_DIR:-../data/imports}:/app/imports:ro
+    networks: [api]
+volumes:
+  routing-data:
+networks:
+  api:
+    external: true
+    name: codoc-client-api

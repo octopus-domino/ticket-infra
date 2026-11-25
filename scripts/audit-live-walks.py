@@ -29,19 +29,19 @@ def request(path, body=None):
         return content, round(time.monotonic() - started, 2)
 
 
-content, elapsed = request('/api/journeys/routes/places/themes')
+content, elapsed = request('/api/walks/v1/places/themes')
 assert set(json.loads(content)) == {'bars', 'mystic', 'religious', 'cultural'}
 result['themes'] = {'ok': True, 'seconds': elapsed}
 
 query = urllib.parse.urlencode({'theme': 'mystic', 'longitude': 30.314,
     'latitude': 59.939, 'visitTime': '2026-11-13T20:00', 'language': 'ru'})
-content, elapsed = request('/api/journeys/routes/places/themed?' + query)
+content, elapsed = request('/api/walks/v1/places/themed?' + query)
 places = json.loads(content)['places']
 result['mystic'] = {'seconds': elapsed, 'count': len(places),
     'sources': sorted(set(place.get('source', '') for place in places)),
     'with_description': sum(bool(place.get('description')) for place in places)}
 
-content, elapsed = request('/api/journeys/routes/road', {
+content, elapsed = request('/api/routing/v1/road', {
     'start': {'longitude': 37.6175, 'latitude': 55.7525},
     'end': {'longitude': 37.6215, 'latitude': 55.754}, 'mode': 'foot'})
 road = json.loads(content)
@@ -49,7 +49,7 @@ assert len(road['coordinates']) >= 2 and road['durationSeconds'] > 0
 result['walking_road'] = {'seconds': elapsed, 'points': len(road['coordinates']),
     'distance_m': road['distanceMeters']}
 
-content, elapsed = request('/api/journeys/routes/places/themed/enrich?language=en', [{
+content, elapsed = request('/api/walks/v1/places/themed/enrich?language=en', [{
     'id': 'release-eiffel', 'label': 'Eiffel Tower', 'longitude': 2.2945,
     'latitude': 48.8584, 'zone': 'Europe/Paris', 'stayMinutes': 30,
     'meta': {'theme': 'cultural', 'source': 'osm'}}])

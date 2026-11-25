@@ -15,7 +15,7 @@ services:
       timeout: 3s
       start_period: 30s
       retries: 3
-  app:
+  routing:
     environment:
       OSM_MCP_ENABLED: "true"
       OSM_MCP_URL: http://osm-mcp:8000/mcp

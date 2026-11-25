@@ -7,6 +7,9 @@
 !private_jorney/**
 !ticket-infra/
 !ticket-infra/Dockerfile
+!ticket-infra/routing/
+!ticket-infra/routing/codoc-foot.brf
+!ticket-infra/routing/BROUTER-LICENSE
 !ticket-infra/nginx.conf
 !ticket-infra/nginx.private-sources.conf
 !ticket-infra/nginx.public-source-headers.conf

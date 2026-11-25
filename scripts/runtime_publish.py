@@ -79,8 +79,8 @@ def main():
     backend = actions.add_parser('backend', help='Patch selected compiled classes and restart only Java')
     backend.add_argument('--classes', type=Path, required=True)
     backend.add_argument('--class-prefix', action='append', required=True,
-                         help='For example ru/ticket/journey/application/map/AreaSearchCoordinator')
-    backend.add_argument('--health-path', default='/api/journeys/routes/places/themes')
+                         help='For example ru/ticket/generation/domain/DataFiller')
+    backend.add_argument('--health-path', default='/api/guest/recognition/capabilities')
     backend.add_argument('--backend-port', type=int, default=8080)
     args = parser.parse_args()
     if not re.fullmatch(r'[\w.@:-]+', args.target) or not re.fullmatch(r'[\w.-]+', args.container):

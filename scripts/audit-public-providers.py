@@ -23,10 +23,10 @@ def call(path, payload=None):
         print(path.split("?")[0], error.code, body.get("error"), flush=True)
         raise
 
-places = call("/api/journeys/routes/places?" + urllib.parse.urlencode({"longitude":37.62,"latitude":55.75,"kind":"attractions","language":"ru"}))
+places = call("/api/walks/v1/places?" + urllib.parse.urlencode({"longitude":37.62,"latitude":55.75,"kind":"attractions","language":"ru"}))
 assert places["places"], "No nearby places"
 print("places=", len(places["places"]), "source=", places["source"], flush=True)
-road = call("/api/journeys/routes/road", {"start":{"longitude":37.6175,"latitude":55.752},"end":{"longitude":37.621,"latitude":55.754},"mode":"foot"})
+road = call("/api/routing/v1/road", {"start":{"longitude":37.6175,"latitude":55.752},"end":{"longitude":37.621,"latitude":55.754},"mode":"foot"})
 assert len(road["coordinates"]) >= 2 and road["durationSeconds"] > 0
 print("walkingPoints=", len(road["coordinates"]), flush=True)
 poetry = call("/api/journeys/poetry", {"latitude":55.75,"longitude":37.62,"zone":"Europe/Moscow","language":"ru","mood":"heartfelt","audience":"middle","seed":"release-audit"})

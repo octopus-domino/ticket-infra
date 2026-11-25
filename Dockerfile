@@ -62,10 +62,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends fontconfig font
 ENV MAVEN_OPTS="-Xms64m -Xmx384m -XX:MaxMetaspaceSize=192m -XX:ActiveProcessorCount=2"
 # Serialize build stages on the small target VM instead of running Node and Maven together.
 COPY --from=private-journey-builder /walks/dist/index.html /tmp/private-journey-built.html
-COPY ticket-pdf/pom.xml ./
+COPY ticket-pdf/document-service/pom.xml ./
 RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked \
     mvn -B -ntp dependency:go-offline
-COPY ticket-pdf/src ./src
+COPY ticket-pdf/document-service/src ./src
 RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked \
     mvn -B -ntp -T1 -DforkCount=1 -DreuseForks=true \
       '-DargLine=-Xmx768m -XX:MaxDirectMemorySize=128m -XX:ActiveProcessorCount=2' clean verify
@@ -77,8 +77,15 @@ FROM eclipse-temurin:17-jdk-alpine AS migration
 WORKDIR /migration
 COPY --from=backend-builder /app/target/*.jar /migration/app.jar
 RUN jar xf app.jar BOOT-INF/lib && rm app.jar
-COPY ticket-pdf/tools/H2ToPostgres.java /migration/H2ToPostgres.java
+COPY ticket-pdf/document-service/tools/H2ToPostgres.java /migration/H2ToPostgres.java
 ENTRYPOINT ["java", "-Xmx512m", "-cp", "/migration/BOOT-INF/lib/*", "/migration/H2ToPostgres.java"]
+
+FROM maven:3.9-eclipse-temurin-17 AS routing-builder
+WORKDIR /routing
+ENV MAVEN_OPTS="-Xmx384m -XX:ActiveProcessorCount=2"
+COPY ticket-pdf/routing-service/pom.xml ./
+COPY ticket-pdf/routing-service/src ./src
+RUN --mount=type=cache,id=codoc-maven,target=/root/.m2/repository,sharing=locked mvn -B -ntp verify
 
 FROM eclipse-temurin:17-jre-alpine AS routing-runtime
 RUN apk add --no-cache curl unzip \
@@ -109,10 +116,19 @@ USER 65534:65534
 RUN python -B -c "import server"
 CMD ["python", "-u", "server.py"]
 
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:17-jre-alpine AS routing-service
 COPY --from=routing-runtime /brouter /opt/brouter
 COPY ticket-infra/routing/codoc-foot.brf /opt/brouter/profiles2/codoc-foot.brf
 COPY ticket-infra/routing/BROUTER-LICENSE /opt/brouter/LICENSE
+COPY --from=routing-builder /routing/target/routing-service-*.jar /opt/routing/service.jar
+RUN addgroup -S routing && adduser -S -G routing routing \
+    && mkdir -p /app/data/routing && chown -R routing:routing /app/data
+WORKDIR /app
+USER routing
+EXPOSE 8093
+ENTRYPOINT ["java", "-Xms32m", "-Xmx192m", "-XX:ActiveProcessorCount=1", "-jar", "/opt/routing/service.jar"]
+
+FROM eclipse-temurin:17-jre-alpine AS runtime
 
 # Устанавливаем Nginx, Supervisor (для запуска двух процессов) и curl
 RUN apk add --no-cache nginx supervisor curl fontconfig font-dejavu font-liberation font-noto-cjk tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-rus

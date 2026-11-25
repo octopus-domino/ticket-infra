@@ -8,7 +8,7 @@ Fonts are bundled locally for reproducible PDFs and no external font requests:
 | Zhi Mang Xing | Simplified Chinese, Latin | https://github.com/google/fonts/tree/main/ofl/zhimangxing | `644e0cae9b40f0b10ab729a01bd32032e3973bac22be3dccae01bf6ae7fde969` |
 
 Both use SIL OFL 1.1. Unmodified font files and their complete copyright/licence
-notices live under `ticket-pdf/src/main/resources/fonts/`. Do not remove licence
+notices live under `ticket-pdf/document-service/src/main/resources/fonts/`. Do not remove licence
 files from distributions. Fonts are subset-embedded into PDFs by FOP. Browser
 previews load only faces present in the actual SVG.
 
