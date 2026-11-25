@@ -13,6 +13,7 @@ services:
     environment:
       ENABLE_TRIP_PLANNER: ${ENABLE_TRIP_PLANNER:-false}
       WALKS_PRINT_MEDIA_URL: http://app:8080
+      TRIPS_DOCUMENT_URL: http://app:8080
       WALKS_DATABASE_URL: jdbc:h2:file:/app/data/routing/walks;INIT=CREATE SCHEMA IF NOT EXISTS ROUTING
       WALKS_DB_SCHEMA: ROUTING
       TWOGIS_API_KEY: ${TWOGIS_API_KEY:-}

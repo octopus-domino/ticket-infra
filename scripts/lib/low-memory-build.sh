@@ -83,7 +83,7 @@ codoc_upgrade_routing_schema() {
   {
     cat "$sql/upgrade-routing-schema.sql"
     printf 'SET LOCAL search_path TO routing, public;\n'
-    cat "$sql/upgrade-building-history.sql" "$sql/upgrade-mystic-places.sql"
+    cat "$sql/upgrade-building-history.sql" "$sql/upgrade-mystic-places.sql" "$sql/upgrade-trip-drafts.sql"
   } | "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 }
 

@@ -108,6 +108,7 @@ cleanup_bootstrap
 bootstrap=''
 migration_started=true
 "${COMPOSE[@]}" run --rm migration | tee "$backup/migration.log"
+"${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/routing-service/src/main/resources/db/upgrade-trip-drafts.sql
 "${COMPOSE[@]}" exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ticket-pdf/document-service/src/main/resources/db/upgrade-workflows.sql
 "${COMPOSE[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > "$backup/postgres-after.dump"
 mv -- "$backup/postgres.env.pending" "$ROOT/.postgres.env"

@@ -40,7 +40,7 @@ class ScriptsTest(unittest.TestCase):
         (root/'private_jorney/package-lock.json').write_text('{}')
         for module, files in {
             'document-service': ['upgrade-journeys.sql','upgrade-workflows.sql'],
-            'routing-service': ['upgrade-routing-schema.sql','upgrade-building-history.sql','upgrade-mystic-places.sql'],
+            'routing-service': ['upgrade-routing-schema.sql','upgrade-building-history.sql','upgrade-mystic-places.sql','upgrade-trip-drafts.sql'],
         }.items():
             relative = Path('ticket-pdf') / module / 'src/main/resources/db'
             sql = root / relative
