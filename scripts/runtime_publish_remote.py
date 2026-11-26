@@ -43,13 +43,22 @@ def backend_pid(container):
     return matches[0]
 
 
-def ready(config):
+def probe_ready(config):
     url = 'http://127.0.0.1:' + str(config['backend_port']) + config['health_path']
+    result = subprocess.run(['docker', 'exec', config['container'], 'curl', '-fsS', '--max-time', '2',
+                             '-w', '\n%{http_code}', url], capture_output=True)
+    body, _, status = result.stdout.rpartition(b'\n')
+    if result.returncode != 0 or status != b'200':
+        return False
+    try:
+        return json.loads(body) == {'status': 'UP'}
+    except (ValueError, UnicodeError):
+        return False
+
+
+def ready(config):
     for _ in range(40):
-        result = subprocess.run(['docker', 'exec', config['container'], 'curl', '-s', '--max-time', '2',
-                                 '-o', '/dev/null', '-w', '%{http_code}', url], capture_output=True)
-        # A protected actuator's 401 is deliberately not used as a health signal.
-        if result.returncode == 0 and result.stdout == b'200':
+        if probe_ready(config):
             return True
         time.sleep(2)
     return False
@@ -109,6 +118,8 @@ def patch_jar(config, stage, archive):
 
 def publish_backend(config, stage, archive, release):
     container = config['container']
+    if not probe_ready(config):
+        raise RuntimeError('Running backend must expose the internal readiness probe before a class patch')
     patch_jar(config, stage, archive)
     process = backend_pid(container)
     image, backup_image = build_image(stage, container, 'COPY app.jar /app/app.jar\n', release)
@@ -122,7 +133,7 @@ def publish_backend(config, stage, archive, release):
         run('docker', 'exec', container, 'kill', '-TERM', process)
         restarted = True
         if not ready(config):
-            raise RuntimeError('Public backend API did not become ready')
+            raise RuntimeError('Internal backend readiness probe did not succeed')
     except Exception:
         run('docker', 'tag', backup_image, image)
         if moved:

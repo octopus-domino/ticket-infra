@@ -121,7 +121,7 @@ COPY --from=routing-runtime /brouter /opt/brouter
 COPY ticket-infra/routing/codoc-foot.brf /opt/brouter/profiles2/codoc-foot.brf
 COPY ticket-infra/routing/BROUTER-LICENSE /opt/brouter/LICENSE
 COPY --from=routing-builder /routing/target/routing-service-*.jar /opt/routing/service.jar
-RUN addgroup -S routing && adduser -S -G routing routing \
+RUN apk add --no-cache curl && addgroup -S routing && adduser -S -G routing routing \
     && mkdir -p /app/data/routing && chown -R routing:routing /app/data
 WORKDIR /app
 USER routing

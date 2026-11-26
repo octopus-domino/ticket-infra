@@ -11,6 +11,8 @@ services:
     memswap_limit: 640m
     cpus: 1.0
     environment:
+      MANAGEMENT_SERVER_PORT: "9093"
+      MANAGEMENT_SERVER_ADDRESS: "127.0.0.1"
       ENABLE_TRIP_PLANNER: ${ENABLE_TRIP_PLANNER:-false}
       WALKS_PRINT_MEDIA_URL: http://app:8080
       TRIPS_DOCUMENT_URL: http://app:8080
@@ -41,7 +43,10 @@ services:
       OSRM_URL: ${OSRM_URL:-https://routing.openstreetmap.de}
       BROUTER_ENABLED: ${BROUTER_ENABLED:-true}
     healthcheck:
-      test: ["CMD", "wget", "-q", "-T", "3", "-O", "/dev/null", "http://127.0.0.1:8093/actuator/health"]
+      test:
+        - CMD-SHELL
+        - >-
+          [ "$$(curl -fsS --max-time 3 -w '%{http_code}' http://127.0.0.1:9093/actuator/health/readiness)" = '{"status":"UP"}200' ]
       interval: 10s
       timeout: 5s
       start_period: 20s

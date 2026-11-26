@@ -99,8 +99,8 @@ bootstrap="codoc-pg-bootstrap-$stamp-$$"
   -e 'JAVA_TOOL_OPTIONS=-Xms64m -Xmx512m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2' app >/dev/null
 ready=false
 for attempt in $(seq 1 90); do
-  status="$(docker exec "$bootstrap" sh -c 'curl -s --max-time 3 -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/actuator/health' 2>/dev/null || true)"
-  if [[ "$status" == 200 || "$status" == 401 ]]; then ready=true; break; fi
+  status="$(docker exec "$bootstrap" curl -fsS --max-time 3 -w '%{http_code}' http://127.0.0.1:9080/actuator/health/readiness 2>/dev/null || true)"
+  if [[ "$status" == '{"status":"UP"}200' ]]; then ready=true; break; fi
   sleep 2
 done
 if [[ "$ready" != true ]]; then docker logs --tail 80 "$bootstrap"; echo "Schema initialization failed. H2 backup: $backup"; exit 1; fi

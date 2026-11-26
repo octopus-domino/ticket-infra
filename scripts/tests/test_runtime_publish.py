@@ -72,14 +72,23 @@ class RuntimePublishTest(unittest.TestCase):
             with zipfile.ZipFile(payload) as archive:
                 self.assertEqual(archive.namelist(), ['BOOT-INF/classes/ru/ticket/demo/Selected.class'])
 
-    def test_health_requires_public_http200_and_does_not_accept401(self):
-        class Result:
-            returncode = 0
-            def __init__(self, value): self.stdout = value
-        config = dict(container='codoc-app-1', backend_port=8080, health_path='/api/guest/recognition/capabilities')
-        with patch.object(remote.subprocess, 'run', side_effect=[Result(b'401'), Result(b'200')]) as call, patch.object(remote.time, 'sleep'):
+    def test_health_requires_http200_and_the_actuator_up_payload(self):
+        config = dict(container='codoc-app-1', backend_port=9080, health_path='/actuator/health/readiness')
+        attempts = [SimpleNamespace(returncode=code, stdout=value) for code, value in (
+            (22, b'\n401'), (22, b'\n403'), (22, b'\n503'), (28, b'\n000'),
+            (0, b'<html>up</html>\n200'), (0, b'{"status":"DOWN"}\n200'), (0, b'{"status":"UP"}\n200'),
+        )]
+        with patch.object(remote.subprocess, 'run', side_effect=attempts) as call, patch.object(remote.time, 'sleep'):
             self.assertTrue(remote.ready(config))
-            self.assertEqual(call.call_count, 2)
+            self.assertEqual(call.call_count, len(attempts))
+
+    def test_backend_patch_does_not_mutate_a_container_without_readiness(self):
+        with patch.object(remote, 'probe_ready', return_value=False), patch.object(remote, 'run') as run, \
+                patch.object(remote, 'patch_jar') as patch_jar:
+            with self.assertRaisesRegex(RuntimeError, 'readiness probe'):
+                remote.publish_backend({'container': 'lab'}, Path('.'), None, 'lab')
+            run.assert_not_called()
+            patch_jar.assert_not_called()
 
     def test_patching_preserves_executable_jar_metadata_and_existing_resources(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -104,6 +113,7 @@ class RuntimePublishTest(unittest.TestCase):
     def test_failed_health_restores_jar_and_image_without_touching_nginx(self):
         config = dict(container='test')
         with tempfile.TemporaryDirectory() as directory, patch.object(remote, 'patch_jar'), \
+                patch.object(remote, 'probe_ready', return_value=True), \
                 patch.object(remote, 'backend_pid', return_value='42'), \
                 patch.object(remote, 'build_image', return_value=('codoc-app:latest', 'codoc-app:backup')), \
                 patch.object(remote, 'ready', side_effect=[False, True]), patch.object(remote, 'run') as run:

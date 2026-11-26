@@ -188,6 +188,8 @@ if args[0] == 'run':
                 (backup/('data.tgz' if '/backup/data.tgz' in ' '.join(args) else 'h2-data.tar.gz')).write_text('test-backup')
     done('new-app')
 if args[0] == 'exec':
+    if any('/actuator/health/readiness' in arg for arg in args):
+        done('{"status":"UP"}200')
     if 'tesseract' in args:
         done('List of available languages:\neng\nrus')
     done('200')

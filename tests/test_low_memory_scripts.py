@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 import signal
 import subprocess
 import tempfile
@@ -158,7 +159,8 @@ class ScriptsTest(unittest.TestCase):
         (root/'state.json').write_text(json.dumps(state))
         (root/'meminfo').write_text('MemTotal: 4194304 kB\nMemAvailable: '+str(extra.pop('available',3200)*1024)+' kB\n')
         bindir=root/'bin';bindir.mkdir()
-        (bindir/'docker').write_bytes(b'#!/usr/bin/env bash\nexec python "$FAKE_DOCKER_PY" "$@"\n')
+        interpreter = shlex.quote(posix(Path(sys.executable)))
+        (bindir/'docker').write_bytes(f'#!/usr/bin/env bash\nexec {interpreter} "$FAKE_DOCKER_PY" "$@"\n'.encode())
         (bindir/'flock').write_bytes(b'#!/usr/bin/env bash\n[[ "${FAKE_LOCK_BUSY:-}" != 1 ]]\n')
         (bindir/'curl').write_bytes(b'#!/usr/bin/env bash\nif [[ "$*" == *http_code* ]]; then echo 401; else echo "{}"; fi\n')
         for command in bindir.iterdir():command.chmod(0o755)

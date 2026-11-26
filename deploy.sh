@@ -202,7 +202,7 @@ launch() {
 ready() {
   local attempt
   for ((attempt=1; attempt<=READY_ATTEMPTS; attempt++)); do
-    if docker exec ticket-app curl -fsS --max-time 3 http://127.0.0.1:8080/api/guest/recognition/capabilities >/dev/null 2>&1 \
+    if [[ "$(docker exec ticket-app curl -fsS --max-time 3 -w '%{http_code}' http://127.0.0.1:9080/actuator/health/readiness 2>/dev/null || true)" == '{"status":"UP"}200' ]] \
       && curl -fsS --max-time 3 http://127.0.0.1:8080/ >/dev/null 2>&1; then return 0; fi
     sleep 2
   done

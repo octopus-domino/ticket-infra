@@ -80,8 +80,8 @@ def main():
     backend.add_argument('--classes', type=Path, required=True)
     backend.add_argument('--class-prefix', action='append', required=True,
                          help='For example ru/ticket/generation/domain/DataFiller')
-    backend.add_argument('--health-path', default='/api/guest/recognition/capabilities')
-    backend.add_argument('--backend-port', type=int, default=8080)
+    backend.add_argument('--health-path', default='/actuator/health/readiness')
+    backend.add_argument('--backend-port', type=int, default=9080)
     args = parser.parse_args()
     if not re.fullmatch(r'[\w.@:-]+', args.target) or not re.fullmatch(r'[\w.-]+', args.container):
         parser.error('Invalid SSH target or container name')
