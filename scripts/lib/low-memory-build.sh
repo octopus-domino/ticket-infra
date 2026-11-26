@@ -101,7 +101,6 @@ codoc_check_routing_proxy() {
 
 codoc_start_postgres_app() {
   local legacy_gateway
-  "${COMPOSE[@]}" up -d --no-build routing || echo 'Routing failed to start; starting Document independently.' >&2
   legacy_gateway="$(docker ps -a -q --filter label=com.docker.compose.project=codoc-gateway --filter label=com.docker.compose.service=gateway)"
   if [[ -n "$legacy_gateway" ]]; then
     # Retain the existing gateway's Redis volume and client API keys.
@@ -110,6 +109,10 @@ codoc_start_postgres_app() {
   else
     "${COMPOSE[@]}" up -d --no-build --wait --wait-timeout 300 app gateway
   fi
+}
+
+codoc_accept_postgres_routing() {
+  "${COMPOSE[@]}" up -d --no-build --wait --wait-timeout 120 routing
   codoc_check_routing_proxy "$("${COMPOSE[@]}" ps -q app)"
 }
 

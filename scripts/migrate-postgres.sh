@@ -113,6 +113,7 @@ migration_started=true
 "${COMPOSE[@]}" exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > "$backup/postgres-after.dump"
 mv -- "$backup/postgres.env.pending" "$ROOT/.postgres.env"
 codoc_start_postgres_app
+codoc_accept_postgres_routing
 bash "$ROOT/ticket-infra/scripts/lib/post-deploy-docker-cleanup.sh"
 printf 'Migration finished. Backups and rollback configuration: %s\n' "$backup"
 printf 'Use ./ticket-infra/deploy.sh for future updates; do not restart the old H2 app.\n'

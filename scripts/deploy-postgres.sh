@@ -40,7 +40,7 @@ finish() {
   if ! codoc_stop_builder; then echo 'Could not stop builder. CoDoc remains stopped; inspect Docker before restarting it.' >&2; exit 1; fi
   if ((status != 0)); then
     if [[ "$app_ready" == true ]]; then
-      echo 'Application is healthy; external Nginx update failed. App remains running; inspect the Nginx rollback output.' >&2
+      echo 'Document is ready. Routing or ingress acceptance failed; Document remains running.' >&2
     elif [[ "$database_changed" == false ]]; then
       # A Compose image update may have replaced the captured PostgreSQL container ID.
       # Restore the existing database service before restarting its clients.
@@ -93,6 +93,7 @@ if [[ "${CODOC_WALK_MCP_ENABLED:-false}" == true ]]; then
 fi
 codoc_start_postgres_app
 app_ready=true
+codoc_accept_postgres_routing
 if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true ]]; then
   sudo -n env CODOC_NGINX_APP_PORT="$CODOC_NGINX_APP_PORT" bash "$ROOT/ticket-infra/scripts/install-external-nginx.sh"
 fi

@@ -178,7 +178,6 @@ if [[ -f "$DATA_DIR/ticket-db.mv.db" ]]; then
       chown routing:routing /app/data/routing/walks.mv.db
     '
 fi
-"${routing_compose[@]}" up -d --no-build --wait --wait-timeout 120 routing
 if [[ "$DEPLOY_CLIENT_API" == true ]]; then "${gateway[@]}" up -d --wait --wait-timeout 180; fi
 if [[ "$stopped" == true ]]; then
   previous="ticket-app-previous-$stamp"
@@ -218,7 +217,6 @@ if [[ "$FIRST_INSTALL" == true ]]; then
 fi
 launch
 ready
-codoc_check_routing_proxy ticket-app
 languages="$(docker exec ticket-app tesseract --list-langs 2>&1)"
 printf '%s\n' "$languages" | tee "$backup/ocr-languages.txt"
 if [[ $'\n'"$languages"$'\n' != *$'\neng\n'* || $'\n'"$languages"$'\n' != *$'\nrus\n'* ]]; then
@@ -228,6 +226,10 @@ fi
 docker image tag "$image" ticket-fullstack:latest
 printf '\nLocal app is ready. Image: %s\nBackup: %s\nPrevious container: %s\n' "$image" "$backup" "${previous:-none}"
 deployed=true
+if ! "${routing_compose[@]}" up -d --no-build --wait --wait-timeout 120 routing || ! codoc_check_routing_proxy ticket-app; then
+  echo 'Document is ready. Routing acceptance failed; inspect the independent Routing service.' >&2
+  exit 2
+fi
 if [[ "${CODOC_UPDATE_EXTERNAL_NGINX:-false}" == true ]]; then
   sudo -n env CODOC_NGINX_APP_PORT="$CODOC_NGINX_APP_PORT" bash "$ROOT/ticket-infra/scripts/install-external-nginx.sh"
 fi
