@@ -179,6 +179,21 @@ def require_empty_restore_target(lab):
         raise RuntimeError('Restore target already contains application data')
 
 
+def artifact_sha256(path):
+    with path.open('rb') as artifact:
+        return hashlib.file_digest(artifact, 'sha256').hexdigest()
+
+
+def require_restore_inputs(manifest, artifacts):
+    if set(manifest) != set(artifacts):
+        raise RuntimeError('The backup manifest has an incomplete artifact list')
+    for name, path in artifacts.items():
+        if not path.is_file():
+            raise RuntimeError(f'Restore artifact missing: {name}')
+        if artifact_sha256(path) != manifest[name]:
+            raise RuntimeError(f'Restore artifact checksum mismatch: {name}')
+
+
 def postgis_contract(lab, fixture):
     shutil.copytree(fixture, lab.root / 'contract')
     client = CLIENT | {'volumes': ['./contract:/contract:ro'], 'working_dir': '/contract',
@@ -352,13 +367,15 @@ def restore_database(lab, ids, document, routing, headers, publication, photo, t
     payload = lab.compose('exec', '-T', 'postgres', 'pg_dump', '-U', 'lab_owner', '-Fc', 'codoc_lab')
     backup.write_bytes(payload)
     shutil.make_archive(str(lab.root / 'lab-files'), 'gztar', lab.root, 'document')
-    digest = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
     archive = lab.root / 'lab-files.tar.gz'
-    manifest = {'database': digest(backup), 'files': digest(archive),
-                'document': digest(document), 'routing': digest(routing)}
+    manifest = {name: artifact_sha256(path) for name, path in {
+        'database': backup, 'files': archive, 'document': document, 'routing': routing,
+    }.items()}
     (lab.root / 'manifest.json').write_text(json.dumps(manifest))
     print(f'dump_bytes={backup.stat().st_size} backup_ms={(time.monotonic()-start)*1000:.0f}', flush=True)
     start = time.monotonic()
+    require_restore_inputs(manifest, {'database': backup, 'files': archive,
+                           'document': lab.root / 'documentrestore.jar', 'routing': lab.root / 'routingrestore.jar'})
     lab.verify()
     lab.compose('stop', 'postgres')
     lab.start('restored')
@@ -367,8 +384,6 @@ def restore_database(lab, ids, document, routing, headers, publication, photo, t
     sql(lab, 'restored', f'CREATE DATABASE {RESTORE_DATABASE} TEMPLATE template0')
     require_empty_restore_target(lab)
     restore = ('exec', '-T', 'restored', 'pg_restore', '-U', 'lab_owner')
-    if manifest['database'] != digest(backup) or manifest['files'] != digest(lab.root / 'lab-files.tar.gz'):
-        raise RuntimeError('The backup manifest does not match')
     lab.compose(*restore, '--list', data=payload)
     try:
         lab.compose(*restore, '--list', data=b'intentionally damaged dump')
@@ -392,8 +407,6 @@ def restore_database(lab, ids, document, routing, headers, publication, photo, t
     assert sql(lab, 'restored', "SELECT to_regclass('routing.journey_trip_drafts') IS NOT NULL", target=True) == b't\n'
     assert sql(lab, 'restored', "SELECT postgis_version() IS NOT NULL", target=True) == b't\n'
     print(f'restore_ms={(time.monotonic()-start)*1000:.0f}', flush=True)
-    if manifest['document'] != digest(lab.root / 'documentrestore.jar') or manifest['routing'] != digest(lab.root / 'routingrestore.jar'):
-        raise RuntimeError('Restored application artifact does not match the snapshot')
     files = lab.root / 'recovered'
     files.mkdir()
     with tarfile.open(archive) as snapshot:
