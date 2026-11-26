@@ -26,17 +26,21 @@ def run_fixture_process(args, root, env, timeout=120):
     # File-backed output remains readable even when a child inherits the handles.
     with (root / 'stdout.log').open('w+', encoding='utf-8') as stdout, \
          (root / 'stderr.log').open('w+', encoding='utf-8') as stderr:
-        with subprocess.Popen(args, cwd=root, env=env, stdout=stdout, stderr=stderr,
+        with subprocess.Popen(args, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
                               start_new_session=os.name != 'nt') as process:
             try:
                 process.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
                 if os.name == 'nt':
-                    subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                   check=False, timeout=10)
-                    if process.poll() is None:
-                        process.kill()
+                    try:
+                        subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                       check=False, timeout=10)
+                    except subprocess.TimeoutExpired:
+                        pass
+                    finally:
+                        if process.poll() is None:
+                            process.kill()
                 else:
                     try:
                         os.killpg(process.pid, signal.SIGKILL)
@@ -207,6 +211,7 @@ class ScriptsTest(unittest.TestCase):
         root,env=self.fixture('legacy',FAKE_FAIL_IMPORT=1)
         result,state=self.run_script(root,env,'ticket-infra/scripts/migrate-postgres.sh','--migrate')
         self.assertEqual(result.returncode,37,result.stdout+result.stderr)
+        self.assertTrue(state['routing_sql_received'])
         self.assertFalse(state['containers']['legacy']['running'])
         self.assertFalse((root/'.postgres.env').exists())
         self.assertFalse(state['builder_running'])

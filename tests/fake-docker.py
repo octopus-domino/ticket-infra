@@ -82,6 +82,9 @@ def compose():
             state['backed_up'] = True
             done('TEST DATABASE DUMP')
         if 'psql' in ' '.join(args):
+            sql = sys.stdin.buffer.read()
+            if b'SET LOCAL search_path TO routing, public;' in sql:
+                state['routing_sql_received'] = True
             state['sql_started'] = True
             if os.environ.get('FAKE_FAIL_SQL'):
                 done(code=31)
