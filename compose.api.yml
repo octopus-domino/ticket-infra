@@ -91,7 +91,7 @@ services:
       TYK_GW_SECRET: ${TYK_ADMIN_SECRET:?Set a random TYK_ADMIN_SECRET}
       TYK_GW_STORAGE_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
       GOMAXPROCS: "1"
-      GOMEMLIMIT: 300MiB
+      GOMEMLIMIT: 120MiB
     mem_limit: 160m
     volumes:
       - ./tyk/tyk.conf:/opt/tyk-gateway/tyk.conf:ro

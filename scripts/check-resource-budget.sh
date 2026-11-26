@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+if [[ "${1:-}" == --compose ]]; then
+  shift
+  script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  docker compose "$@" config --format json | python3 "$script_dir/check_resource_budget.py"
+  exit
+fi
 echo 'Host memory (MiB):'
 free -m
 mapfile -t containers < <(docker ps -q)
