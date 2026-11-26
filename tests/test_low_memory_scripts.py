@@ -7,8 +7,10 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import tempfile
+import time
 import unittest
 import sys
 
@@ -19,6 +21,47 @@ BASH=str(GIT_BASH) if os.name=='nt' and GIT_BASH.exists() else shutil.which('bas
 def posix(path):
     path=path.resolve()
     return '/'+path.drive[0].lower()+path.as_posix()[2:] if os.name=='nt' else str(path)
+
+def run_fixture_process(args, root, env, timeout=120):
+    # File-backed output remains readable even when a child inherits the handles.
+    with (root / 'stdout.log').open('w+', encoding='utf-8') as stdout, \
+         (root / 'stderr.log').open('w+', encoding='utf-8') as stderr:
+        with subprocess.Popen(args, cwd=root, env=env, stdout=stdout, stderr=stderr,
+                              start_new_session=os.name != 'nt') as process:
+            try:
+                process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                if os.name == 'nt':
+                    subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   check=False, timeout=10)
+                    if process.poll() is None:
+                        process.kill()
+                else:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                process.wait()
+                raise
+        stdout.seek(0)
+        stderr.seek(0)
+        return subprocess.CompletedProcess(args, process.returncode, stdout.read(), stderr.read())
+
+class FixtureProcessTest(unittest.TestCase):
+    def test_timeout_stops_descendants_with_inherited_output(self):
+        (WORKSPACE / 'temp').mkdir(exist_ok=True)
+        root = Path(tempfile.mkdtemp(prefix='process-timeout-', dir=WORKSPACE / 'temp'))
+        child = ("from pathlib import Path; import time; Path('started').touch(); "
+                 "time.sleep(3); Path('escaped').touch()")
+        parent = ("import subprocess, sys, time; "
+                  "subprocess.Popen([sys.executable, '-c', sys.argv[1]]); time.sleep(8)")
+        with self.assertRaises(subprocess.TimeoutExpired):
+            run_fixture_process([sys.executable, '-c', parent, child], root, os.environ, timeout=1.5)
+        self.assertTrue((root / 'started').is_file())
+        deadline = (root / 'started').stat().st_mtime + 3.25
+        time.sleep(max(0, deadline - time.time()))
+        self.assertFalse((root / 'escaped').exists())
 
 class ScriptsTest(unittest.TestCase):
     def fixture(self,mode='pg',**extra):
@@ -81,7 +124,7 @@ class ScriptsTest(unittest.TestCase):
         return root,env
 
     def run_script(self,root,env,script,*arguments):
-        completed=subprocess.run([BASH,script,*arguments],cwd=root,env=env,capture_output=True,text=True,timeout=120)
+        completed=run_fixture_process([BASH,script,*arguments],root,env)
         (root/'last-output.txt').write_text(completed.stdout+completed.stderr)
         return completed,json.loads((root/'state.json').read_text())
 
@@ -232,7 +275,7 @@ class ScriptsTest(unittest.TestCase):
         driver=root/'test-powershell.ps1'
         driver.write_bytes(b'function docker { & $env:FAKE_PYTHON $env:FAKE_DOCKER_PY @args; $global:LASTEXITCODE=$LASTEXITCODE }\n& "$PSScriptRoot/ticket-infra/build.ps1"\nexit $LASTEXITCODE\n')
         env=dict(env,FAKE_PYTHON=sys.executable)
-        result=subprocess.run([shell,'-NoProfile','-File',str(driver)],cwd=root,env=env,capture_output=True,text=True,timeout=120)
+        result=run_fixture_process([shell,'-NoProfile','-File',str(driver)],root,env)
         (root/'last-output.txt').write_text(result.stdout+result.stderr)
         return result,json.loads((root/'state.json').read_text())
 
