@@ -101,6 +101,7 @@ class Lab:
 
 CLIENT = {'image': 'codoc-app', 'mem_limit': '32m', 'cpus': 0.10,
           'tmpfs': ['/app/data:size=1m'], 'entrypoint': ['sh', '-ec', 'exec sleep 1800']}
+RESTORE_DATABASE = 'codoc_restore_test'
 
 
 def wait_ready(lab, name, port):
@@ -132,7 +133,8 @@ def application(lab, name, path, database, *, travel):
            'BROUTER_HTTP_ENABLED': 'false', 'VALHALLA_ENABLED': 'false',
            'OSM_MCP_ENABLED': 'false', 'COMMONS_MCP_ENABLED': 'false'}
     if database:
-        url = f'jdbc:postgresql://{database}:5432/codoc_lab?currentSchema=' + ('routing,public' if routing else 'public')
+        db_name = RESTORE_DATABASE if database == 'restored' else 'codoc_lab'
+        url = f'jdbc:postgresql://{database}:5432/{db_name}?currentSchema=' + ('routing,public' if routing else 'public')
         user, password = 'lab_owner', 'lab-db-credentials'
         env['SPRING_DATASOURCE_DRIVER_CLASS_NAME'] = 'org.postgresql.Driver'
         if routing:
@@ -160,12 +162,21 @@ def database(volume):
                             'interval': '5s', 'retries': 20}}
 
 
-def sql(lab, service, statement):
+def sql(lab, service, statement, *, target=False):
     if service not in {'postgres', 'restored'}:
         raise RuntimeError('Refusing to run SQL outside the disposable database')
+    if target and service != 'restored':
+        raise RuntimeError('The restore database belongs to the independent target service')
     lab.verify()
     return lab.compose('exec', '-T', service, 'psql', '-XAt', '-v', 'ON_ERROR_STOP=1',
-                       '-U', 'lab_owner', '-d', 'codoc_lab', '-c', statement)
+                       '-U', 'lab_owner', '-d', RESTORE_DATABASE if target else 'codoc_lab', '-c', statement)
+
+
+def require_empty_restore_target(lab):
+    if sql(lab, 'restored', 'SELECT current_database()', target=True).decode().strip() != RESTORE_DATABASE:
+        raise RuntimeError('Wrong restore database')
+    if sql(lab, 'restored', "SELECT to_regclass('public.documents') IS NULL", target=True) != b't\n':
+        raise RuntimeError('Restore target already contains application data')
 
 
 def postgis_contract(lab, fixture):
@@ -352,8 +363,9 @@ def restore_database(lab, ids, document, routing, headers, publication, photo, t
     lab.compose('stop', 'postgres')
     lab.start('restored')
     lab.compose('up', '-d', '--wait', 'restored')
-    assert sql(lab, 'restored', 'SELECT current_database()') == b'codoc_lab\n'
-    assert sql(lab, 'restored', "SELECT to_regclass('public.documents') IS NULL") == b't\n'
+    # The image initializes its default database with PostGIS/Tiger. The archive owns those schemas.
+    sql(lab, 'restored', f'CREATE DATABASE {RESTORE_DATABASE} TEMPLATE template0')
+    require_empty_restore_target(lab)
     restore = ('exec', '-T', 'restored', 'pg_restore', '-U', 'lab_owner')
     if manifest['database'] != digest(backup) or manifest['files'] != digest(lab.root / 'lab-files.tar.gz'):
         raise RuntimeError('The backup manifest does not match')
@@ -364,13 +376,21 @@ def restore_database(lab, ids, document, routing, headers, publication, photo, t
         print('Damaged dump rejected in preflight', flush=True)
     else:
         raise RuntimeError('Damaged dump passed preflight')
-    lab.compose(*restore, '--exit-on-error', '--single-transaction', '--no-owner', '-d', 'codoc_lab', data=payload)
+    lab.compose(*restore, '--exit-on-error', '--single-transaction', '--no-owner', '-d', RESTORE_DATABASE, data=payload)
+    try:
+        require_empty_restore_target(lab)
+    except RuntimeError as error:
+        if str(error) != 'Restore target already contains application data':
+            raise
+        print('Repeated restore refused for the populated database', flush=True)
+    else:
+        raise RuntimeError('Repeated restore guard did not detect application data')
     for table, identifier in zip(('documents', 'schemas', 'data_models', 'templates'), ids, strict=True):
         if not re.fullmatch(r'[\w-]{1,64}', identifier):
             raise RuntimeError('Unexpected test object identifier')
-        assert sql(lab, 'restored', f"SELECT id FROM public.{table} WHERE id = '{identifier}'").decode().strip() == identifier
-    assert sql(lab, 'restored', "SELECT to_regclass('routing.journey_trip_drafts') IS NOT NULL") == b't\n'
-    assert sql(lab, 'restored', "SELECT postgis_version() IS NOT NULL") == b't\n'
+        assert sql(lab, 'restored', f"SELECT id FROM public.{table} WHERE id = '{identifier}'", target=True).decode().strip() == identifier
+    assert sql(lab, 'restored', "SELECT to_regclass('routing.journey_trip_drafts') IS NOT NULL", target=True) == b't\n'
+    assert sql(lab, 'restored', "SELECT postgis_version() IS NOT NULL", target=True) == b't\n'
     print(f'restore_ms={(time.monotonic()-start)*1000:.0f}', flush=True)
     if manifest['document'] != digest(lab.root / 'documentrestore.jar') or manifest['routing'] != digest(lab.root / 'routingrestore.jar'):
         raise RuntimeError('Restored application artifact does not match the snapshot')
@@ -486,6 +506,8 @@ def gateway(lab, soft, hard):
 
 
 if __name__ == '__main__':
+    if not __debug__:
+        raise RuntimeError('Run acceptance drills with Python assertions enabled')
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument('--gateway-soft-mib', type=int)
     parser.add_argument('--gateway-hard-mib', type=int, choices=[160, 384])
