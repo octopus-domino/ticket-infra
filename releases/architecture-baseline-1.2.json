@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "name": "CoDoc Architecture Baseline 1.2",
+  "date": "2026-11-27",
+  "state": "integration-candidate",
+  "productionDeploy": "not-performed",
+  "runtimeAcceptance": "partial",
+  "repositories": {
+    "ticket-editor": {
+      "remote": "https://github.com/octopus-domino/ticket-editor",
+      "defaultBranch": "master",
+      "baseSha": "bb76be2fbb65bbfcba101cb7d1a3a7594dca5bba",
+      "phaseSha": "58f576f5637be100ee2762ec76110d6a9200d70d",
+      "candidateSha": "3326d67ec43ed8e598e1a6895185c08a95faa328",
+      "candidateBranch": "codex/architecture-checkpoint-editor",
+      "tag": "architecture-baseline-1.2",
+      "tagStatus": "pending",
+      "qualityHandoffSha": "8910164e9411c173931914f5efab39961a04590e",
+      "localDefaultBefore": "59d09e46963639a53dcd286a5d91540ef74c4c15",
+      "observedDefaultSha": "bb76be2fbb65bbfcba101cb7d1a3a7594dca5bba",
+      "integrationStatus": "candidate-published"
+    },
+    "ticket-pdf": {
+      "remote": "https://github.com/octopus-domino/ticket-pdf",
+      "defaultBranch": "main",
+      "baseSha": "e237ae125d89d1434b3d7729c69243be546673e3",
+      "phaseSha": "6a88fe8c5511e240b36e17ba5ca06c1bfb6477c4",
+      "candidateSha": "c4e150fc637c0bb03f0267c0bcd1a5d2d0361afb",
+      "candidateBranch": "codex/architecture-checkpoint-pdf",
+      "tag": "architecture-baseline-1.2",
+      "tagStatus": "pending",
+      "qualityHandoffSha": "c98e7484fffd85da02cd96624b143aaadefebb70",
+      "implementationSha": "6a88fe8c5511e240b36e17ba5ca06c1bfb6477c4",
+      "observedDefaultSha": "e237ae125d89d1434b3d7729c69243be546673e3",
+      "integrationStatus": "candidate-published"
+    },
+    "ticket-infra": {
+      "remote": "https://github.com/octopus-domino/ticket-infra",
+      "defaultBranch": "main",
+      "baseSha": "3ade22148b8efb4f535e0f7565c515fdec8d88db",
+      "phaseSha": "4d2b627327bd2741530d20e67a013a8e66f09e7e",
+      "candidateSha": "4d2b627327bd2741530d20e67a013a8e66f09e7e",
+      "candidateBranch": "codex/architecture-checkpoint-infra",
+      "tag": "architecture-baseline-1.2",
+      "tagStatus": "pending",
+      "qualityHandoffSha": "e652074c296be61e90c425afa0a6dcb278c07fbd",
+      "observedDefaultSha": "3ade22148b8efb4f535e0f7565c515fdec8d88db",
+      "integrationStatus": "candidate-published"
+    },
+    "private-jorney": {
+      "remote": "https://github.com/octopus-domino/private-jorney",
+      "defaultBranch": "main",
+      "baseSha": "d8ca76a1b3778846d937895775377a03d90dcb87",
+      "phaseSha": "39c3825957b9e38df93acc05c87cac7a4c3ccd9a",
+      "candidateSha": "39c3825957b9e38df93acc05c87cac7a4c3ccd9a",
+      "candidateBranch": "codex/architecture-checkpoint-journey",
+      "tag": "architecture-baseline-1.2",
+      "tagStatus": "pending",
+      "qualityHandoffSha": "39c3825957b9e38df93acc05c87cac7a4c3ccd9a",
+      "observedDefaultSha": "d8ca76a1b3778846d937895775377a03d90dcb87",
+      "integrationStatus": "candidate-published"
+    }
+  },
+  "infraImplementationSha": "4d2b627327bd2741530d20e67a013a8e66f09e7e",
+  "infraMetadataLocator": "The Infra commit containing this manifest is metadata-only. The annotated tag resolves it after acceptance. The manifest records its implementation parent without a self-reference.",
+  "contracts": {
+    "journeyHandoff": {
+      "version": 1,
+      "messageType": "private-walk:complete",
+      "compatibleExtensions": "Optional notes, POI IDs, source and qualified photo references",
+      "adr": "ticket-pdf/docs/decisions/0004-private-journey-handoff.md"
+    },
+    "accountTrip": {
+      "version": 2,
+      "endpoint": "/api/routing/v1/trips",
+      "media": "Point-level photoRefs and photoCredits"
+    },
+    "persistence": {
+      "h2": "file",
+      "postgresqlSchemas": [
+        "public",
+        "routing"
+      ]
+    },
+    "actuator": {
+      "liveness": "/actuator/health/liveness",
+      "readiness": "/actuator/health/readiness",
+      "acceptedReadinessStatus": 200,
+      "acceptedReadinessBody": {
+        "status": "UP"
+      },
+      "visibility": "loopback"
+    }
+  },
+  "tools": {
+    "node": "24.22.0",
+    "npm": "11.19.1",
+    "maven": "3.9.9",
+    "jdk": "21.0.4",
+    "javaTarget": 17,
+    "python": "3.15",
+    "git": "2.33.0.windows.2",
+    "localCompose": "2.5.1",
+    "serverDocker": "29.9.3",
+    "serverCompose": "5.7.0"
+  },
+  "profiles": {
+    "composeStatic": [
+      "routing",
+      "gateway",
+      "api",
+      "api+ostrovok-mcp",
+      "api+postgres",
+      "api+postgres+walks",
+      "api+postgres+walks+tools",
+      "api+postgres+walks+tools+ostrovok-mcp"
+    ],
+    "phase12Runtime": [
+      "H2/Docker Travel off",
+      "PostgreSQL 17/PostGIS 3.5/Docker Travel on",
+      "H2/Windows JVM Travel on",
+      "Inline Tyk 120/160 MiB",
+      "Standalone Tyk 300/384 MiB"
+    ],
+    "editor": [
+      "default",
+      "Travel v1/v2",
+      "email-enabled",
+      "built Journey desktop",
+      "built Journey mobile"
+    ],
+    "journeyViewports": [
+      "desktop",
+      "android",
+      "small-android",
+      "android-landscape"
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "ticket-pdf-1.0.0.jar",
+      "sourceSha": "58b597b599f543125d5a796d8d5928c814eb4201",
+      "sha256": "b9dd8467f2d9e62666d2b07cf304493954728df32f81d9cee51c9d7762df6617",
+      "evidence": "previous-server-drills"
+    },
+    {
+      "name": "routing-service-1.0.0.jar",
+      "sourceSha": "58b597b599f543125d5a796d8d5928c814eb4201",
+      "sha256": "4ae961f38a606dc7e4e847498bd7cb14ed88bf1f4c1b38e39bad31d23c91c1c6",
+      "evidence": "previous-server-drills"
+    },
+    {
+      "name": "ticket-pdf-1.0.0.jar",
+      "sourceSha": "6a88fe8c5511e240b36e17ba5ca06c1bfb6477c4",
+      "sha256": "17e339cdb98e4523abc4ce9bc7263ed7df84973cdb3cb4f7d02aed0a2f26b3b7",
+      "evidence": "freeze-local-maven"
+    },
+    {
+      "name": "routing-service-1.0.0.jar",
+      "sourceSha": "6a88fe8c5511e240b36e17ba5ca06c1bfb6477c4",
+      "sha256": "9ccf3ba8332b2436ca2971d497395627cd9452d0635341978500a9afbecaa2bf",
+      "evidence": "freeze-local-maven"
+    }
+  ],
+  "runtimeEvidence": {
+    "restoreInfraSha": "dbee8d593ae1eae85d98fc7dd449832d002922cc",
+    "syntheticRtoSeconds": 138.806,
+    "additionalRestoreGuardsSha": "c7bb201ee083f453b4315c52872113abe28758bc",
+    "additionalFaultDrillSha": "4d2b627327bd2741530d20e67a013a8e66f09e7e"
+  },
+  "knownOpen": [
+    "ARC-016 coordinated backups and negative restore cases",
+    "ARC-017 synchronous interservice calls",
+    "ARC-018 independent PostgreSQL roles",
+    "ARC-023 media provenance",
+    "ARC-024 disabled Travel API status",
+    "ARC-025 OCR outage diagnostics",
+    "Additional Linux fault drills, PostgreSQL Travel off, and Testcontainers",
+    "Physical mobile devices and real SMTP delivery",
+    "Repeatability of release artifacts and Phase 1.3"
+  ],
+  "regression": {
+    "editor": {
+      "codeSha": "3326d67ec43ed8e598e1a6895185c08a95faa328",
+      "typecheck": "passed",
+      "strictLint": "passed",
+      "architecture": "passed",
+      "productionBuild": "passed",
+      "unit": {
+        "passed": 428,
+        "failed": 0,
+        "skipped": 0
+      },
+      "coverage": {
+        "lines": 88.79,
+        "branches": 74.12,
+        "phase12Lines": 89.54,
+        "phase12Branches": 74.16
+      },
+      "emailEnabled": {
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0
+      },
+      "defaultE2E": "pending",
+      "travel": "pending",
+      "builtHandoff": "pending",
+      "githubQuality": {
+        "status": "pending",
+        "url": "https://github.com/octopus-domino/ticket-editor/actions/runs/45906193266"
+      }
+    },
+    "backend": {
+      "mavenVerify": {
+        "command": "mvn -o -B verify",
+        "passed": 362,
+        "failed": 0,
+        "skipped": 6,
+        "architecture": "passed",
+        "evidence": "Windows JDK 21 targeting Java 17"
+      },
+      "priorGithubQuality": {
+        "status": "failed",
+        "step": "mvn -B verify",
+        "url": "https://github.com/octopus-domino/ticket-pdf/actions/runs/45905818574"
+      },
+      "candidateGithubQuality": "pending",
+      "localFaultDrill": {
+        "ocr": "documented ARC-025",
+        "smtp": "repeat did not see the synthetic connection",
+        "remaining": "pending"
+      }
+    },
+    "journey": {
+      "unit": {
+        "passed": 110,
+        "failed": 0,
+        "skipped": 0
+      },
+      "webBuild": "passed",
+      "embeddedBuild": "passed",
+      "androidJvm": {
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0
+      },
+      "e2e": "pending",
+      "githubQuality": "no repository workflow"
+    },
+    "infra": {
+      "scriptsUnittest": {
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0
+      },
+      "mainUnittestAttempt": {
+        "passed": 16,
+        "failed": 6,
+        "skipped": 0,
+        "failure": "Windows subprocess timeout"
+      },
+      "mainUnittestRepeat": "pending",
+      "composeConfig": {
+        "passed": 8,
+        "failed": 0
+      },
+      "resourceBudget": {
+        "inline": "passed",
+        "standalone": "passed",
+        "invalidBudget": "rejected"
+      },
+      "githubQuality": "no repository workflow"
+    }
+  },
+  "reportPath": "ticket-pdf/docs/ARCHITECTURE-BASELINE-1.2.md",
+  "phase12ResultsPath": "ticket-pdf/docs/BASELINE-AFTER.md"
+}
