@@ -22,25 +22,66 @@ def posix(path):
     path=path.resolve()
     return '/'+path.drive[0].lower()+path.as_posix()[2:] if os.name=='nt' else str(path)
 
+def windows_process_job(pid):
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
+    kernel.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+    kernel.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+    kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+
+    job = kernel.CreateJobObjectW(None, None)
+    if not job:
+        return None
+    process = kernel.OpenProcess(0x0100 | 0x0001, False, pid)  # PROCESS_SET_QUOTA | PROCESS_TERMINATE
+    try:
+        if process and kernel.AssignProcessToJobObject(job, process):
+            return (lambda: kernel.TerminateJobObject(job, 1), lambda: kernel.CloseHandle(job))
+    finally:
+        if process:
+            kernel.CloseHandle(process)
+    kernel.CloseHandle(job)
+    return None
+
 def run_fixture_process(args, root, env, timeout=120):
+    command = args
+    if os.name == 'nt':
+        # Hold the launcher before it forks, so every descendant starts inside the job.
+        launch = ("import subprocess, sys\n"
+                  "if not sys.stdin.buffer.read(1):\n"
+                  "    sys.exit(1)\n"
+                  "sys.exit(subprocess.call(sys.argv[1:], stdin=subprocess.DEVNULL))")
+        command = [sys.executable, '-c', launch, *args]
     # File-backed output remains readable even when a child inherits the handles.
     with (root / 'stdout.log').open('w+', encoding='utf-8') as stdout, \
          (root / 'stderr.log').open('w+', encoding='utf-8') as stderr:
-        with subprocess.Popen(args, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
+        stdin = subprocess.PIPE if os.name == 'nt' else subprocess.DEVNULL
+        with subprocess.Popen(command, cwd=root, env=env, stdin=stdin, stdout=stdout, stderr=stderr,
                               start_new_session=os.name != 'nt') as process:
+            job = windows_process_job(process.pid) if os.name == 'nt' else None
+            terminate_job, close_job = job or (None, None)
             try:
+                if process.stdin:
+                    with process.stdin:
+                        process.stdin.write(b'\n')
                 process.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
                 if os.name == 'nt':
-                    try:
-                        subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
-                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                       check=False, timeout=10)
-                    except subprocess.TimeoutExpired:
-                        pass
-                    finally:
-                        if process.poll() is None:
-                            process.kill()
+                    if not terminate_job or not terminate_job():
+                        try:
+                            subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                           check=False, timeout=10)
+                        except subprocess.TimeoutExpired:
+                            pass
+                        finally:
+                            if process.poll() is None:
+                                process.kill()
                 else:
                     try:
                         os.killpg(process.pid, signal.SIGKILL)
@@ -48,6 +89,9 @@ def run_fixture_process(args, root, env, timeout=120):
                         pass
                 process.wait()
                 raise
+            finally:
+                if close_job:
+                    close_job()
         stdout.seek(0)
         stderr.seek(0)
         return subprocess.CompletedProcess(args, process.returncode, stdout.read(), stderr.read())
